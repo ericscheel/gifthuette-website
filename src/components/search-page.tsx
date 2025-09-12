@@ -37,8 +37,8 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
         
         // Extract unique ingredients from all drinks
         const ingredients = new Set<string>();
-        drinks.forEach(drink => {
-          drink.ingredients.forEach(ingredient => ingredients.add(ingredient));
+        (drinks || []).forEach(drink => {
+          (drink.ingredients || []).forEach(ingredient => ingredients.add(ingredient));
         });
         setAllIngredients(Array.from(ingredients).sort());
       } catch (err) {
@@ -73,8 +73,8 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
 
         const results = await api.search(searchQuery.trim(), filters);
         setSearchResults({
-          drinks: results.drinks,
-          totalResults: results.totalResults
+          drinks: results.drinks || [],
+          totalResults: results.totalResults || 0
         });
       } catch (err) {
         console.error('Search error:', err);
@@ -360,7 +360,7 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
                     
                     {/* Highlight matching ingredients */}
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {drink.ingredients.slice(0, 3).map((ingredient, idx) => {
+                      {(drink.ingredients || []).slice(0, 3).map((ingredient, idx) => {
                         const isMatching = selectedFilters.some(filter =>
                           ingredient.toLowerCase().includes(filter.toLowerCase())
                         ) || (searchQuery && ingredient.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -375,9 +375,9 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
                           </Badge>
                         );
                       })}
-                      {drink.ingredients.length > 3 && (
+                      {(drink.ingredients || []).length > 3 && (
                         <Badge variant="outline" className="text-xs">
-                          +{drink.ingredients.length - 3}
+                          +{(drink.ingredients || []).length - 3}
                         </Badge>
                       )}
                     </div>

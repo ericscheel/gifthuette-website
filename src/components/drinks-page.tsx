@@ -13,6 +13,14 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
   const ref = useRef<HTMLDivElement>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   
+  // Ensure drink has all required properties with defaults
+  const safeDrink = {
+    ...drink,
+    ingredients: drink.ingredients || [],
+    tags: drink.tags || [],
+    media: drink.media || [],
+  };
+  
   const springValues = {
     damping: 25,
     stiffness: 150,
@@ -99,8 +107,8 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
             
             <div className="relative h-full">
               <ImageWithFallback
-                src={drink.media?.[0]?.url || 'https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080'}
-                alt={drink.name}
+                src={safeDrink.media[0]?.url || 'https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080'}
+                alt={safeDrink.name}
                 className="w-full h-full object-cover"
               />
               
@@ -108,7 +116,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Floating badges with subtle 3D effect */}
-              {drink.tags?.includes('signature') && (
+              {safeDrink.tags.includes('signature') && (
                 <motion.div
                   className="absolute top-3 left-3 [transform:translateZ(20px)]"
                   style={{ transformStyle: 'preserve-3d' }}
@@ -123,7 +131,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                 className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded text-sm shadow-lg [transform:translateZ(15px)]"
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                {drink.alcoholContent ? `${drink.alcoholContent}%` : '0%'}
+                {safeDrink.alcoholContent ? `${safeDrink.alcoholContent}%` : '0%'}
               </motion.div>
               
               {/* 3D Floating Product Name and Price */}
@@ -137,7 +145,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  {drink.name}
+                  {safeDrink.name}
                 </motion.h3>
                 <motion.div
                   className="flex justify-between items-center"
@@ -146,7 +154,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                   transition={{ delay: 0.3 }}
                 >
                   <span className="text-3xl font-bold text-primary mystical-text">
-                    {ApiUtils.formatPrice(drink.priceCents)}
+                    {ApiUtils.formatPrice(safeDrink.priceCents)}
                   </span>
                   <div className="flex items-center bg-black/70 text-white px-2 py-1 rounded text-sm">
                     <Star className="h-3 w-3 fill-primary text-primary mr-1" />
@@ -224,7 +232,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                   animate={isFlipped ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  {drink.name}
+                  {safeDrink.name}
                 </motion.h3>
                 
                 <motion.p 
@@ -233,7 +241,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                   animate={isFlipped ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  {drink.description}
+                  {safeDrink.description}
                 </motion.p>
                 
                 <motion.div 
@@ -243,14 +251,14 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                 >
                   <h4 className="text-xs font-semibold mb-1 text-primary">Zutaten:</h4>
                   <div className="flex flex-wrap gap-1">
-                    {drink.ingredients.slice(0, 3).map((ingredient, idx) => (
+                    {safeDrink.ingredients.slice(0, 3).map((ingredient, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
                         {ingredient}
                       </Badge>
                     ))}
-                    {drink.ingredients.length > 3 && (
+                    {safeDrink.ingredients.length > 3 && (
                       <Badge variant="outline" className="text-xs px-1 py-0">
-                        +{drink.ingredients.length - 3}
+                        +{safeDrink.ingredients.length - 3}
                       </Badge>
                     )}
                   </div>
@@ -263,12 +271,12 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                 >
                   <h4 className="text-xs font-semibold mb-1 text-primary">Kategorie:</h4>
                   <div className="flex flex-wrap gap-1">
-                    {drink.category && (
+                    {safeDrink.category && (
                       <Badge variant="secondary" className="text-xs px-1 py-0">
-                        {drink.category.name}
+                        {safeDrink.category.name}
                       </Badge>
                     )}
-                    {drink.tags?.slice(0, 2).map((tag, idx) => (
+                    {safeDrink.tags.slice(0, 2).map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs px-1 py-0">
                         {tag}
                       </Badge>
@@ -286,10 +294,10 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
               >
                 <div className="text-center">
                   <span className="text-lg font-bold text-primary mystical-text">
-                    {ApiUtils.formatPrice(drink.priceCents)}
+                    {ApiUtils.formatPrice(safeDrink.priceCents)}
                   </span>
                   <div className="text-xs text-muted-foreground">
-                    {drink.alcoholContent ? `${drink.alcoholContent}%` : '0%'}
+                    {safeDrink.alcoholContent ? `${safeDrink.alcoholContent}%` : '0%'}
                   </div>
                 </div>
                 <motion.div
@@ -297,7 +305,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                   whileTap={{ scale: 0.95 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedDrink?.(drink.slug);
+                    setSelectedDrink?.(safeDrink.slug);
                   }}
                 >
                   <Button 
@@ -386,8 +394,8 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
           api.getCategories()
         ]);
 
-        setDrinks(drinksResponse);
-        setCategories(categoriesResponse.filter(cat => cat.isActive));
+        setDrinks(drinksResponse || []);
+        setCategories((categoriesResponse || []).filter(cat => cat.isActive));
       } catch (err) {
         console.error('Error loading drinks data:', err);
         setError('Fehler beim Laden der Getränke. Bitte versuchen Sie es später erneut.');
@@ -506,7 +514,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
               <div>
                 <h3 className="text-xl font-bold mb-2">Zutaten</h3>
                 <div className="flex flex-wrap gap-2">
-                  {drink.ingredients.map((ingredient, index) => (
+                  {(drink.ingredients || []).map((ingredient, index) => (
                     <Badge key={index} variant="outline">
                       {ingredient}
                     </Badge>
@@ -522,7 +530,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
                       {drink.category.name}
                     </Badge>
                   )}
-                  {drink.tags?.map((tag, index) => (
+                  {(drink.tags || []).map((tag, index) => (
                     <Badge key={index} variant="outline">
                       {tag}
                     </Badge>
