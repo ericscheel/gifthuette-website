@@ -1,0 +1,543 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #1a0f0a;
+  --foreground: #f5f2e8;
+  --card: #2a1810;
+  --card-foreground: #f5f2e8;
+  --popover: #2a1810;
+  --popover-foreground: #f5f2e8;
+  --primary: #4ade80;
+  --primary-foreground: #1a0f0a;
+  --secondary: #3d2617;
+  --secondary-foreground: #f5f2e8;
+  --muted: #453326;
+  --muted-foreground: #9ca3af;
+  --accent: #16a34a;
+  --accent-foreground: #f5f2e8;
+  --destructive: #dc2626;
+  --destructive-foreground: #f5f2e8;
+  --border: #453326;
+  --input: #453326;
+  --input-background: #2a1810;
+  --switch-background: #453326;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #4ade80;
+  --chart-1: #4ade80;
+  --chart-2: #16a34a;
+  --chart-3: #15803d;
+  --chart-4: #166534;
+  --chart-5: #14532d;
+  --radius: 0.625rem;
+  --sidebar: #2a1810;
+  --sidebar-foreground: #f5f2e8;
+  --sidebar-primary: #4ade80;
+  --sidebar-primary-foreground: #1a0f0a;
+  --sidebar-accent: #453326;
+  --sidebar-accent-foreground: #f5f2e8;
+  --sidebar-border: #453326;
+  --sidebar-ring: #4ade80;
+  
+  /* Custom Gifthütte Colors */
+  --poison-green: #22c55e;
+  --poison-green-light: #4ade80;
+  --poison-green-dark: #16a34a;
+  --wood-brown: #92400e;
+  --wood-brown-light: #a16207;
+  --wood-brown-dark: #78350f;
+  --slime-green: #84cc16;
+}
+
+.dark {
+  --background: #1a0f0a;
+  --foreground: #f5f2e8;
+  --card: #2a1810;
+  --card-foreground: #f5f2e8;
+  --popover: #2a1810;
+  --popover-foreground: #f5f2e8;
+  --primary: #4ade80;
+  --primary-foreground: #1a0f0a;
+  --secondary: #3d2617;
+  --secondary-foreground: #f5f2e8;
+  --muted: #453326;
+  --muted-foreground: #9ca3af;
+  --accent: #16a34a;
+  --accent-foreground: #f5f2e8;
+  --destructive: #dc2626;
+  --destructive-foreground: #f5f2e8;
+  --border: #453326;
+  --input: #453326;
+  --ring: #4ade80;
+  --chart-1: #4ade80;
+  --chart-2: #16a34a;
+  --chart-3: #15803d;
+  --chart-4: #166534;
+  --chart-5: #14532d;
+  --sidebar: #2a1810;
+  --sidebar-foreground: #f5f2e8;
+  --sidebar-primary: #4ade80;
+  --sidebar-primary-foreground: #1a0f0a;
+  --sidebar-accent: #453326;
+  --sidebar-accent-foreground: #f5f2e8;
+  --sidebar-border: #453326;
+  --sidebar-ring: #4ade80;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Custom Gifthütte Colors */
+  --color-poison-green: var(--poison-green);
+  --color-poison-green-light: var(--poison-green-light);
+  --color-poison-green-dark: var(--poison-green-dark);
+  --color-wood-brown: var(--wood-brown);
+  --color-wood-brown-light: var(--wood-brown-light);
+  --color-wood-brown-dark: var(--wood-brown-dark);
+  --color-slime-green: var(--slime-green);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* Custom mystical animations */
+@keyframes drip {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+@keyframes poisonBubble {
+  0% {
+    transform: translateY(100px) scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(80px) scale(0.3);
+  }
+  80% {
+    opacity: 0.7;
+    transform: translateY(-20px) scale(0.8);
+  }
+  100% {
+    transform: translateY(-100px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes mysticalGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 5px rgba(34, 197, 94, 0.3),
+      0 0 10px rgba(34, 197, 94, 0.2),
+      0 0 15px rgba(34, 197, 94, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(34, 197, 94, 0.6),
+      0 0 30px rgba(34, 197, 94, 0.4),
+      0 0 40px rgba(34, 197, 94, 0.2);
+  }
+}
+
+@keyframes floatingParticles {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(50px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fogRoll {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulsePoison {
+  0%, 100% {
+    transform: scale(1);
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: hue-rotate(30deg);
+  }
+}
+
+@keyframes shadowFlicker {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px rgba(34, 197, 94, 0.5),
+      0 0 10px rgba(34, 197, 94, 0.3),
+      0 0 15px rgba(34, 197, 94, 0.2);
+  }
+  25% {
+    text-shadow: 
+      0 0 10px rgba(34, 197, 94, 0.8),
+      0 0 20px rgba(34, 197, 94, 0.6),
+      0 0 30px rgba(34, 197, 94, 0.4);
+  }
+  75% {
+    text-shadow: 
+      0 0 3px rgba(34, 197, 94, 0.3),
+      0 0 6px rgba(34, 197, 94, 0.2);
+  }
+}
+
+@keyframes spellCast {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-10deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes cauldronBubble {
+  0%, 100% {
+    transform: scale(1) translateY(0px);
+  }
+  25% {
+    transform: scale(1.1) translateY(-2px);
+  }
+  50% {
+    transform: scale(0.9) translateY(1px);
+  }
+  75% {
+    transform: scale(1.05) translateY(-1px);
+  }
+}
+
+.drip-animation {
+  animation: drip 3s infinite ease-in-out;
+}
+
+.poison-bubble {
+  animation: poisonBubble 4s infinite linear;
+}
+
+.mystical-glow {
+  animation: mysticalGlow 3s infinite ease-in-out;
+}
+
+.floating-particles {
+  animation: floatingParticles 8s infinite linear;
+}
+
+.fog-effect {
+  animation: fogRoll 15s infinite linear;
+}
+
+.pulse-poison {
+  animation: pulsePoison 2s infinite ease-in-out;
+}
+
+.shadow-flicker {
+  animation: shadowFlicker 4s infinite ease-in-out;
+}
+
+.spell-cast {
+  animation: spellCast 0.8s ease-out forwards;
+}
+
+.cauldron-bubble {
+  animation: cauldronBubble 2s infinite ease-in-out;
+}
+
+/* Wood texture effect - Enhanced */
+.wood-texture {
+  background: 
+    linear-gradient(90deg, transparent 76%, rgba(255,255,255,0.02) 78%, transparent 80%),
+    linear-gradient(90deg, transparent 26%, rgba(0,0,0,0.15) 28%, transparent 30%),
+    linear-gradient(90deg, transparent 46%, rgba(255,255,255,0.01) 48%, transparent 50%),
+    linear-gradient(45deg, rgba(0,0,0,0.05) 0%, transparent 20%);
+  background-size: 7px 100%, 11px 100%, 13px 100%, 50px 50px;
+  position: relative;
+}
+
+.wood-texture::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(0,0,0,0.1) 0%, transparent 30%),
+    radial-gradient(circle at 80% 80%, rgba(0,0,0,0.1) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+/* Enhanced poison glow effect */
+.poison-glow {
+  box-shadow: 
+    0 0 5px rgba(34, 197, 94, 0.4),
+    0 0 10px rgba(34, 197, 94, 0.3),
+    0 0 15px rgba(34, 197, 94, 0.2),
+    inset 0 0 5px rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Mystical atmosphere overlay */
+.mystical-atmosphere {
+  position: relative;
+  overflow: hidden;
+}
+
+.mystical-atmosphere::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at top, rgba(0,0,0,0.3) 0%, transparent 70%),
+    radial-gradient(ellipse at bottom, rgba(0,0,0,0.3) 0%, transparent 70%),
+    radial-gradient(circle at 30% 40%, rgba(34, 197, 94, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(34, 197, 94, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mystical-atmosphere::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322c55e' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Floating particles effect */
+.particles-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.8) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 8s; }
+.particle:nth-child(2) { left: 20%; animation-delay: 1s; animation-duration: 9s; }
+.particle:nth-child(3) { left: 30%; animation-delay: 2s; animation-duration: 7s; }
+.particle:nth-child(4) { left: 40%; animation-delay: 3s; animation-duration: 10s; }
+.particle:nth-child(5) { left: 50%; animation-delay: 4s; animation-duration: 8s; }
+.particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 9s; }
+.particle:nth-child(7) { left: 70%; animation-delay: 6s; animation-duration: 7s; }
+.particle:nth-child(8) { left: 80%; animation-delay: 7s; animation-duration: 8s; }
+.particle:nth-child(9) { left: 90%; animation-delay: 8s; animation-duration: 9s; }
+
+/* Poison bubble effect */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 70%, transparent 100%);
+  pointer-events: none;
+}
+
+.bubble:nth-child(1) { 
+  width: 10px; height: 10px; left: 15%; 
+  animation-delay: 0s; animation-duration: 4s; 
+}
+.bubble:nth-child(2) { 
+  width: 6px; height: 6px; left: 25%; 
+  animation-delay: 1s; animation-duration: 5s; 
+}
+.bubble:nth-child(3) { 
+  width: 8px; height: 8px; left: 35%; 
+  animation-delay: 2s; animation-duration: 4.5s; 
+}
+.bubble:nth-child(4) { 
+  width: 12px; height: 12px; left: 55%; 
+  animation-delay: 3s; animation-duration: 4s; 
+}
+.bubble:nth-child(5) { 
+  width: 7px; height: 7px; left: 75%; 
+  animation-delay: 4s; animation-duration: 5s; 
+}
+
+/* Fog effect */
+.fog {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100px;
+  background: linear-gradient(to top, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* Dark mystical card enhancement */
+.mystical-card {
+  background: 
+    linear-gradient(135deg, rgba(42, 24, 16, 0.95) 0%, rgba(26, 15, 10, 0.95) 100%),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 15px rgba(34, 197, 94, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Mystical text glow */
+.mystical-text {
+  text-shadow: 
+    0 0 10px rgba(34, 197, 94, 0.5),
+    0 0 20px rgba(34, 197, 94, 0.3),
+    0 0 30px rgba(34, 197, 94, 0.2);
+  filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.4));
+}
