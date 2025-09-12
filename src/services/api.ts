@@ -388,7 +388,7 @@ class GifthuetteApiService {
    * Health Check - API Status prüfen
    */
   async healthCheck(): Promise<{ status: string; timestamp: string; version?: string }> {
-    return this.request<{ status: string; timestamp: string; version?: string }>('/auth/server-status');
+    return this.request<{ status: string; timestamp: string; version?: string }>('/health');
   }
 
   /**
