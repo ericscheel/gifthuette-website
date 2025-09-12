@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -6,17 +6,17 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Mail, 
-  Instagram, 
+import {
+  MapPin,
+  Clock,
+  Phone,
+  Mail,
+  Instagram,
   Facebook,
   Calendar,
-  Star,
   Send
 } from 'lucide-react';
+import { useCurrentLocation, useUpcomingLocations } from '../hooks/useApi';
 
 interface ContactPageProps {
   setCurrentPage: (page: string) => void;
@@ -31,51 +31,62 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
     date: '',
     message: ''
   });
+  const { data: currentLocation } = useCurrentLocation();
+  const { data: upcomingLocations } = useUpcomingLocations();
 
-  // Mock data for current locations/events
-  const currentLocations = [
-    {
-      id: 1,
-      name: "Stadtfest Mannheim",
-      address: "Marktplatz, 68159 Mannheim",
-      dates: "15. - 17. September 2025",
-      hours: "18:00 - 24:00 Uhr",
-      status: "Aktuell vor Ort",
-      description: "Drei Tage voller Geschmack und guter Stimmung!",
-      image: "https://images.unsplash.com/photo-1755414717736-0d3ffe1f5a1a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbGQlMjB3b29kZW4lMjBwdWIlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080"
-    },
-    {
-      id: 2,
-      name: "Nachtmarkt Heidelberg",
-      address: "Bismarckplatz, 69115 Heidelberg",
-      dates: "20. - 22. September 2025",
-      hours: "19:00 - 02:00 Uhr",
-      status: "Nächster Standort",
-      description: "Die perfekte Location für unsere nächtlichen Kreationen",
-      image: "https://images.unsplash.com/photo-1681821675154-5f50ede43f6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGdsYXNzJTIwZGFyayUyMGJhcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080"
+  const currentLocations = useMemo(() => {
+    const locations: Array<{
+      id: string;
+      name: string;
+      address: string;
+      dates: string;
+      hours: string;
+      status: string;
+      description: string;
+      image: string;
+    }> = [];
+    if (currentLocation) {
+      const date = new Date(currentLocation.date);
+      locations.push({
+        id: currentLocation.id,
+        name: currentLocation.name,
+        address: `${currentLocation.address}, ${currentLocation.city}`,
+        dates: date.toLocaleDateString('de-DE'),
+        hours: date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr',
+        status: 'Aktuell vor Ort',
+        description: '',
+        image: 'https://via.placeholder.com/400'
+      });
     }
-  ];
+    if (upcomingLocations && upcomingLocations.length > 0) {
+      const next = upcomingLocations[0];
+      const date = new Date(next.date);
+      locations.push({
+        id: next.id,
+        name: next.name,
+        address: `${next.address}, ${next.city}`,
+        dates: date.toLocaleDateString('de-DE'),
+        hours: date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr',
+        status: 'Nächster Standort',
+        description: '',
+        image: 'https://via.placeholder.com/400'
+      });
+    }
+    return locations;
+  }, [currentLocation, upcomingLocations]);
 
-  const upcomingEvents = [
-    {
-      date: "25. September 2025",
-      event: "Oktoberfest Karlsruhe",
-      location: "Festplatz am Zoo",
-      time: "16:00 - 01:00 Uhr"
-    },
-    {
-      date: "2. Oktober 2025",
-      event: "Halloween Market Stuttgart", 
-      location: "Schlossplatz",
-      time: "18:00 - 24:00 Uhr"
-    },
-    {
-      date: "15. Oktober 2025",
-      event: "Herbstmarkt Pforzheim",
-      location: "Marktplatz",
-      time: "14:00 - 22:00 Uhr"
-    }
-  ];
+  const upcomingEvents = useMemo(() => {
+    if (!upcomingLocations) return [];
+    return upcomingLocations.map(loc => {
+      const date = new Date(loc.date);
+      return {
+        date: date.toLocaleDateString('de-DE'),
+        event: loc.name,
+        location: `${loc.address}, ${loc.city}`,
+        time: date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
+      };
+    });
+  }, [upcomingLocations]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
