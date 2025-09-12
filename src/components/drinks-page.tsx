@@ -5,10 +5,12 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Filter, Star, Eye } from 'lucide-react';
-import { MysticalEffects, CauldronBubble } from './mystical-effects';
+import { MysticalEffects } from './mystical-effects';
+import { useDrinks, useCategories } from '../hooks/useApi';
+import type { Drink as ApiDrink } from '../services/api';
 
 // Flip Drink Card Component with 3D Tilt
-function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelectedDrink?: (id: number | null) => void }) {
+function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: DrinkCard; setSelectedDrink?: (id: string | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   
@@ -353,8 +355,8 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
   );
 }
 
-interface Drink {
-  id: number;
+interface DrinkCard {
+  id: string;
   name: string;
   description: string;
   price: string;
@@ -369,136 +371,58 @@ interface Drink {
 
 interface DrinksPageProps {
   setCurrentPage: (page: string) => void;
-  selectedDrink?: number | null;
-  setSelectedDrink?: (id: number | null) => void;
+  selectedDrink?: string | null;
+  setSelectedDrink?: (id: string | null) => void;
 }
 
 export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: DrinksPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Mock data - in real app this would come from API
-  const drinks: Drink[] = [
-    {
-      id: 1,
-      name: "Giftiger Apfel",
-      description: "Unser Signature-Cocktail mit geheimen Zutaten und einem Hauch von Zimt",
-      price: "12.50€",
-      alcohol: "18%",
-      ingredients: ["Apfel-Likör", "Vodka", "Zimt-Sirup", "Limette", "Geheime Zutat"],
-      categories: ["Signature Cocktails", "Fruchtig"],
-      specialty: "Unsere berühmteste Kreation mit einem mysteriösen grünen Schimmer",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      rating: 4.9,
-    },
-    {
-      id: 2,
-      name: "Schwarze Witwe",
-      description: "Ein dunkler Cocktail mit überraschender Süße",
-      price: "11.00€",
-      alcohol: "22%",
-      ingredients: ["Rum", "Blackberry Likör", "Amaretto", "Zitrone", "Dunkler Sirup"],
-      categories: ["Signature Cocktails", "Stark"],
-      specialty: "Sieht gefährlich aus, schmeckt himmlisch",
-      image: "https://images.unsplash.com/photo-1681821675154-5f50ede43f6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGdsYXNzJTIwZGFyayUyMGJhcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      rating: 4.7,
-    },
-    {
-      id: 3,
-      name: "Elixier des Lebens",
-      description: "Ein erfrischender Mix aus exotischen Früchten",
-      price: "10.50€",
-      alcohol: "15%",
-      ingredients: ["Mango", "Passionsfrucht", "Vodka", "Minze", "Kokoswasser"],
-      categories: ["Signature Cocktails", "Fruchtig", "Erfrischend"],
-      specialty: "Bringt Leben in jeden Moment",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      rating: 4.6,
-    },
-    {
-      id: 4,
-      name: "Mojito",
-      description: "Der klassische kubanische Cocktail",
-      price: "8.50€",
-      alcohol: "12%",
-      ingredients: ["Weißer Rum", "Minze", "Limette", "Rohrzucker", "Soda"],
-      categories: ["Klassische Cocktails", "Erfrischend"],
-      specialty: "Zeitlos und erfrischend",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: false,
-      rating: 4.5,
-    },
-    {
-      id: 5,
-      name: "Whiskey Sour",
-      description: "Klassisch mit einer modernen Twist",
-      price: "9.00€",
-      alcohol: "20%",
-      ingredients: ["Bourbon Whiskey", "Zitrone", "Zucker", "Eiweiß", "Angostura"],
-      categories: ["Klassische Cocktails", "Stark"],
-      specialty: "Mit hausgemachtem Sirup verfeinert",
-      image: "https://images.unsplash.com/photo-1681821675154-5f50ede43f6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGdsYXNzJTIwZGFyayUyMGJhcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: false,
-      rating: 4.4,
-    },
-    {
-      id: 6,
-      name: "Gift-Shot",
-      description: "Unser berüchtigter Signature-Shot",
-      price: "4.50€",
-      alcohol: "35%",
-      ingredients: ["Wodka", "Absinth", "Grüner Tee", "Honig", "Limette"],
-      categories: ["Shots & Schnäpse", "Signature Cocktails"],
-      specialty: "Nur für die Mutigen!",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      rating: 4.8,
-    },
-    {
-      id: 7,
-      name: "Virgin Poison",
-      description: "Alkoholfreie Version unseres Signatures",
-      price: "6.50€",
-      alcohol: "0%",
-      ingredients: ["Apfelsaft", "Grüner Tee", "Zimt", "Limette", "Kohlensäure"],
-      categories: ["Alkoholfreie Getränke", "Fruchtig"],
-      specialty: "Sieht aus wie Gift, schmeckt wie Himmel",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: false,
-      rating: 4.3,
-    },
-    {
-      id: 8,
-      name: "Jägermeister",
-      description: "Der deutsche Klassiker",
-      price: "3.50€",
-      alcohol: "35%",
-      ingredients: ["Jägermeister"],
-      categories: ["Shots & Schnäpse", "Klassische Cocktails"],
-      specialty: "Eisgekühlt serviert",
-      image: "https://images.unsplash.com/photo-1681821675154-5f50ede43f6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGdsYXNzJTIwZGFyayUyMGJhcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: false,
-      rating: 4.2,
-    },
-  ];
+  const { data: drinksData, loading, error } = useDrinks();
+  const { data: categoriesData } = useCategories();
 
-  const categories = [
-    'all',
-    'Signature Cocktails',
-    'Klassische Cocktails',
-    'Shots & Schnäpse',
-    'Alkoholfreie Getränke',
-    'Fruchtig',
-    'Stark',
-    'Erfrischend',
-  ];
+  const drinks: DrinkCard[] = useMemo(() => {
+    if (!drinksData) return [];
+    return drinksData.data.map((d: ApiDrink) => ({
+      id: d.slug,
+      name: d.name,
+      description: d.description,
+      price: `${(d.priceCents / 100).toFixed(2)}€`,
+      alcohol: d.alcoholContent ? `${d.alcoholContent}%` : '0%',
+      ingredients: d.ingredients,
+      categories: d.category ? [d.category.name] : [],
+      specialty: '',
+      image: d.media[0]?.url || 'https://via.placeholder.com/400',
+      featured: d.tags?.includes('signature') || false,
+      rating: 0,
+    }));
+  }, [drinksData]);
+
+  const categories = useMemo(() => {
+    const names = categoriesData ? categoriesData.map(c => c.name) : [];
+    return ['all', ...names];
+  }, [categoriesData]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Fehler beim Laden der Getränke
+      </div>
+    );
+  }
 
   const filteredDrinks = useMemo(() => {
     if (selectedCategory === 'all') return drinks;
     return drinks.filter(drink => drink.categories.includes(selectedCategory));
-  }, [selectedCategory]);
+  }, [selectedCategory, drinks]);
 
   // If a specific drink is selected, show detail view
   if (selectedDrink) {
