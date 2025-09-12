@@ -8,17 +8,6 @@ import { PrivacyPage } from './components/privacy-page';
 import { ImprintPage } from './components/imprint-page';
 import { AdminPageEnhanced as AdminPage } from './components/admin-page-enhanced';
 import { LoginPage } from './components/login-page';
-import { ApiDebug } from './components/api-debug';
-import { ApiDebugEnhanced } from './components/api-debug-enhanced';
-import { CorsTest } from './components/cors-test';
-import { CloudflareDebug } from './components/cloudflare-debug';
-import { UnifiedApiDebug } from './components/unified-api-debug';
-import { ApiQuickTest } from './components/api-quick-test';
-import { TokenDebug } from './components/token-debug';
-import { TokenFixer } from './components/token-fixer';
-import { CertificateDebug } from './components/certificate-debug';
-import { UnifiedApiDebugEnhanced } from './components/unified-api-debug-enhanced';
-import { CloudflareCertificateGuide } from './components/cloudflare-certificate-guide';
 import { ToastProvider } from './components/toast-provider';
 import { ApiStatusIndicator } from './components/api-status-indicator';
 import { useAuth } from './hooks/useApi';
@@ -92,24 +81,6 @@ function App() {
           return <LoginPage setCurrentPage={setCurrentPage} onLogin={handleLogin} />;
         }
         return <AdminPage setCurrentPage={setCurrentPage} currentUser={currentUser} onLogout={handleLogout} />;
-      case 'api-debug':
-        return <ApiDebugEnhanced />;
-      case 'token-debug':
-        return <TokenDebug />;
-      case 'cors-test':
-        return <CorsTest />;
-      case 'cloudflare-debug':
-        return <CloudflareDebug />;
-      case 'unified-api-debug':
-        return <UnifiedApiDebug />;
-      case 'api-quick-test':
-        return <ApiQuickTest />;
-      case 'certificate-debug':
-        return <CertificateDebug />;
-      case 'unified-api-enhanced':
-        return <UnifiedApiDebugEnhanced />;
-      case 'cloudflare-cert-guide':
-        return <CloudflareCertificateGuide />;
       default:
         return <HomePage setCurrentPage={setCurrentPage} />;
     }
@@ -119,7 +90,6 @@ function App() {
 
   return (
     <ToastProvider>
-      <TokenFixer />
       <div className="min-h-screen bg-background text-foreground">
         {showNavigation && (
           <Navigation 

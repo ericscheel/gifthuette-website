@@ -19,7 +19,7 @@ export function EnvDebug() {
 
   const env = {
     API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de'),
-    JWT_TOKEN: getEnvVar('VITE_JWT_TOKEN', ''),
+    SERVER_TOKEN: getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', ''),
     NODE_ENV: getEnvVar('VITE_NODE_ENV', 'development'),
     DEBUG: getEnvVar('VITE_DEBUG', 'false')
   };
@@ -56,12 +56,12 @@ export function EnvDebug() {
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">JWT Token:</span>
+            <span className="text-muted-foreground">Server Token:</span>
             <div className="flex items-center gap-2">
-              <Badge variant={env.JWT_TOKEN ? 'default' : 'destructive'} className="text-xs">
-                {env.JWT_TOKEN ? 'Available' : 'Missing'}
+              <Badge variant={env.SERVER_TOKEN ? 'default' : 'destructive'} className="text-xs">
+                {env.SERVER_TOKEN ? 'Available' : 'Missing'}
               </Badge>
-              {env.JWT_TOKEN && (
+              {env.SERVER_TOKEN && (
                 <button
                   onClick={() => setShowToken(!showToken)}
                   className="text-muted-foreground hover:text-foreground"
@@ -72,11 +72,11 @@ export function EnvDebug() {
             </div>
           </div>
           
-          {showToken && env.JWT_TOKEN && (
+          {showToken && env.SERVER_TOKEN && (
             <div className="col-span-full">
-              <div className="text-muted-foreground text-xs mb-1">Token Value:</div>
+              <div className="text-muted-foreground text-xs mb-1">Server Token Value:</div>
               <div className="bg-secondary/50 p-2 rounded text-xs break-all font-mono">
-                {env.JWT_TOKEN.substring(0, 20)}...{env.JWT_TOKEN.substring(env.JWT_TOKEN.length - 10)}
+                {env.SERVER_TOKEN.substring(0, 25)}...{env.SERVER_TOKEN.substring(env.SERVER_TOKEN.length - 10)}
               </div>
             </div>
           )}
@@ -84,7 +84,7 @@ export function EnvDebug() {
         
         <div className="border-t border-primary/20 pt-2">
           <div className="text-xs text-muted-foreground">
-            Local Storage Token: {localStorage.getItem('gifthütte_token') ? '✓ Present' : '✗ Not found'}
+            🧪 Gifthütte Development Environment
           </div>
         </div>
       </CardContent>

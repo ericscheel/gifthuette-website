@@ -20,12 +20,10 @@ export function ApiTest() {
 
   const testEndpoints = [
     { name: 'Health Check', test: () => api.healthCheck() },
-    { name: 'Ping', test: () => api.ping() },
     { name: 'Categories', test: () => api.getCategories() },
     { name: 'Highlights', test: () => api.getHighlights() },
     { name: 'Current Location', test: () => api.getCurrentLocation() },
     { name: 'Upcoming Locations', test: () => api.getUpcomingLocations() },
-    { name: 'Instagram Feed', test: () => api.getInstagramFeed() },
     { name: 'Drinks', test: () => api.getDrinks({ page: 1, pageSize: 5 }) }
   ];
 

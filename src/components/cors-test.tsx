@@ -16,7 +16,7 @@ export function CorsTest() {
   const [isRunning, setIsRunning] = useState(false);
 
   const API_BASE = 'https://api.gifthuette.de';
-  const token = localStorage.getItem('gifthütte_token') || import.meta?.env?.VITE_JWT_TOKEN;
+  const token = import.meta?.env?.VITE_GIFTHUETTE_SERVER_TOKEN;
 
   const corsTests = [
     {

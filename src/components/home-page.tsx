@@ -36,7 +36,7 @@ export function HomePage({ setCurrentPage }: HomePageProps) {
       newsletterEmail
     );
 
-    if (result !== null) {
+    if (result) {
       toast.success('Newsletter-Anmeldung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.');
       setNewsletterEmail('');
     } else {

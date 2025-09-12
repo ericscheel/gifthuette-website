@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, ApiError } from '../services/api';
-import { unifiedApi } from '../services/unified-api';
+import { api, ApiError, tokenManager, type User, type Drink, type Category, type Highlight, type Location } from '../services/api';
 
 // Generic hook for API calls with loading and error states
 export function useApi<T>(
@@ -82,8 +81,8 @@ export function useDrinks(searchParams?: {
 }) {
   return useApi(
     async () => {
-      const response = await unifiedApi.getDrinks();
-      return response.success ? response.data : [];
+      const response = await api.getDrinks(searchParams);
+      return response;
     },
     [searchParams?.q, searchParams?.category, searchParams?.page, searchParams?.pageSize]
   );
@@ -91,15 +90,13 @@ export function useDrinks(searchParams?: {
 
 export function useCategories() {
   return useApi(async () => {
-    const response = await unifiedApi.getCategories();
-    return response.success ? response.data : [];
+    return await api.getCategories();
   });
 }
 
 export function useHighlights() {
   return useApi(async () => {
-    const response = await unifiedApi.getHighlights();
-    return response.success ? response.data : [];
+    return await api.getHighlights(true); // Only active highlights
   });
 }
 
@@ -109,38 +106,79 @@ export function useUpcomingLocations() {
 
 export function useCurrentLocation() {
   return useApi(async () => {
-    const response = await unifiedApi.getCurrentLocation();
-    return response.success ? response.data : null;
+    return await api.getCurrentLocation();
   });
 }
 
 export function useInstagramFeed() {
   return useApi(async () => {
-    const response = await unifiedApi.getInstagramPosts();
-    return response.success ? response.data : [];
+    try {
+      const instagramPosts = await api.getInstagramFeed();
+      return instagramPosts.map(post => ({
+        id: post.id,
+        url: post.media_url,
+        caption: post.caption,
+        timestamp: post.timestamp,
+        permalink: post.permalink
+      }));
+    } catch (error) {
+      // Fallback zu Mock-Daten wenn Instagram API nicht verfügbar
+      console.warn('Instagram API not available, using mock data:', error);
+      return [
+        {
+          id: '1',
+          url: 'https://images.unsplash.com/photo-1541746972996-4e0b0f93e586?w=400',
+          caption: 'Mystische Cocktails in der Gifthütte 🧪✨',
+          timestamp: new Date().toISOString(),
+          permalink: '#'
+        },
+        {
+          id: '2', 
+          url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400',
+          caption: 'Grüne Zaubertränke für mutige Gäste 🌿💚',
+          timestamp: new Date().toISOString(),
+          permalink: '#'
+        }
+      ];
+    }
   });
 }
 
 // Auth hook
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await unifiedApi.getMe();
-      if (response.success) {
-        setUser(response.data);
-        setIsAuthenticated(true);
-      } else {
+      
+      // Check if we have a user token first (separate from server token)
+      const userToken = tokenManager.getToken();
+      if (!userToken) {
         setUser(null);
         setIsAuthenticated(false);
+        setLoading(false);
+        return;
       }
+
+      // Check if token is valid before making API call
+      if (!tokenManager.isAuthenticated()) {
+        tokenManager.removeToken();
+        setUser(null);
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+
+      const user = await api.getMe();
+      setUser(user);
+      setIsAuthenticated(true);
     } catch (err) {
       setUser(null);
       setIsAuthenticated(false);
+      tokenManager.removeToken(); // Remove invalid token
     } finally {
       setLoading(false);
     }
@@ -152,10 +190,10 @@ export function useAuth() {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const response = await unifiedApi.login(email, password);
-      if (response.success && response.data?.accessToken) {
-        localStorage.setItem('gifthütte_token', response.data.accessToken);
-        await checkAuth();
+      const response = await api.login(email, password);
+      if (response.token && response.user) {
+        setUser(response.user);
+        setIsAuthenticated(true);
         return true;
       }
       return false;
@@ -163,12 +201,17 @@ export function useAuth() {
       console.error('Login error:', err);
       return false;
     }
-  }, [checkAuth]);
+  }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('gifthütte_token');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = useCallback(async () => {
+    try {
+      await api.logout();
+    } catch (err) {
+      console.warn('Logout API call failed:', err);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   return {

@@ -2,23 +2,48 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Badge } from './ui/badge';
 import { Wifi, WifiOff, Cloud, CloudOff } from 'lucide-react';
-import { api } from '../services/api';
+import { api, config } from '../services/api';
 
 interface ApiStatusIndicatorProps {
   className?: string;
 }
 
 export function ApiStatusIndicator({ className = '' }: ApiStatusIndicatorProps) {
-  const [status, setStatus] = React.useState(api.getApiStatus());
+  const [status, setStatus] = React.useState<{
+    isOnline: boolean;
+    message: string;
+    lastCheck?: string;
+  }>({
+    isOnline: false,
+    message: 'Checking...'
+  });
+
+  const checkApiStatus = React.useCallback(async () => {
+    try {
+      await api.healthCheck();
+      setStatus({
+        isOnline: true,
+        message: 'API Online',
+        lastCheck: new Date().toISOString()
+      });
+    } catch (error) {
+      setStatus({
+        isOnline: false,
+        message: 'API Offline',
+        lastCheck: new Date().toISOString()
+      });
+    }
+  }, []);
 
   React.useEffect(() => {
-    // Update status every 5 seconds
-    const interval = setInterval(() => {
-      setStatus(api.getApiStatus());
-    }, 5000);
+    // Initial check
+    checkApiStatus();
+    
+    // Check every 30 seconds
+    const interval = setInterval(checkApiStatus, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [checkApiStatus]);
 
   const isOnline = status.isOnline;
 
@@ -74,15 +99,34 @@ export function ApiStatusIndicator({ className = '' }: ApiStatusIndicatorProps) 
 
 // Compact version for navigation
 export function ApiStatusBadge({ className = '' }: ApiStatusIndicatorProps) {
-  const [status, setStatus] = React.useState(api.getApiStatus());
+  const [status, setStatus] = React.useState<{
+    isOnline: boolean;
+    message: string;
+  }>({
+    isOnline: false,
+    message: 'Checking...'
+  });
+
+  const checkApiStatus = React.useCallback(async () => {
+    try {
+      await api.healthCheck();
+      setStatus({
+        isOnline: true,
+        message: 'API Online'
+      });
+    } catch (error) {
+      setStatus({
+        isOnline: false,
+        message: 'API Offline'
+      });
+    }
+  }, []);
 
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      setStatus(api.getApiStatus());
-    }, 5000);
-
+    checkApiStatus();
+    const interval = setInterval(checkApiStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [checkApiStatus]);
 
   const isOnline = status.isOnline;
 

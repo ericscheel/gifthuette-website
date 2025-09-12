@@ -26,23 +26,23 @@ export function NetworkTest() {
       };
 
       const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de');
-      const JWT_TOKEN = getEnvVar('VITE_JWT_TOKEN', '');
+      const SERVER_TOKEN = getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '');
 
       console.log('Direct fetch test:', {
         API_BASE_URL,
-        HAS_TOKEN: !!JWT_TOKEN,
-        TOKEN_START: JWT_TOKEN ? JWT_TOKEN.substring(0, 10) + '...' : 'none'
+        HAS_TOKEN: !!SERVER_TOKEN,
+        TOKEN_START: SERVER_TOKEN ? SERVER_TOKEN.substring(0, 25) + '...' : 'none'
       });
 
-      // Test 1: Simple ping without auth
-      const pingResponse = await fetch(`${API_BASE_URL}/ping`, {
+      // Test 1: Health check without auth
+      const pingResponse = await fetch(`${API_BASE_URL}/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('Ping Response:', {
+      console.log('Health Response:', {
         status: pingResponse.status,
         statusText: pingResponse.statusText,
         ok: pingResponse.ok
@@ -64,7 +64,7 @@ export function NetworkTest() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${JWT_TOKEN}`
+          'Authorization': `Bearer ${SERVER_TOKEN}`
         }
       });
 

@@ -36,22 +36,16 @@ export function ApiStatus({ className }: ApiStatusProps) {
           }
         };
         
-        const JWT_TOKEN = getEnvVar('VITE_JWT_TOKEN', '');
+        const SERVER_TOKEN = getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '');
         const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de');
         
-        const hasToken = !!JWT_TOKEN || !!localStorage.getItem('gifthütte_token');
+        const hasToken = !!SERVER_TOKEN;
         
         // Try to reach the API
         let apiReachable = false;
         try {
-          // Make a simple request to check API availability
-          await fetch(`${API_BASE_URL}/categories`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${JWT_TOKEN}`,
-              'Content-Type': 'application/json'
-            }
-          });
+          // Use the new API health check
+          await api.healthCheck();
           apiReachable = true;
         } catch (error) {
           console.warn('API not reachable:', error);
@@ -124,7 +118,7 @@ export function ApiStatus({ className }: ApiStatusProps) {
         </div>
         
         <div className="flex items-center justify-between text-xs">
-          <span>JWT Token:</span>
+          <span>Server Token:</span>
           {getStatusBadge(status.hasToken, status.hasToken ? 'Vorhanden' : 'Fehlt')}
         </div>
         
@@ -140,7 +134,7 @@ export function ApiStatus({ className }: ApiStatusProps) {
         {getEnvVar('VITE_DEBUG') === 'true' && (
           <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-primary/20">
             <div>API URL: {API_BASE_URL}</div>
-            <div>Token: {JWT_TOKEN ? '✓ Gesetzt' : '✗ Nicht gesetzt'}</div>
+            <div>Server Token: {getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '') ? '✓ Gesetzt' : '✗ Nicht gesetzt'}</div>
           </div>
         )}
       </CardContent>

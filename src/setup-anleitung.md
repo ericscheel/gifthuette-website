@@ -243,18 +243,55 @@ npm run build
 netlify deploy --prod --dir=build
 ```
 
-## 11. Troubleshooting
+## 11. Einheitliche API-Konfiguration (v2.0)
 
-### Häufige Probleme:
-- **CORS-Errors**: Debug-Tools verwenden (`/api-debug`)
-- **Certificate-Issues**: Certificate-Debug verwenden (`/certificate-debug`)
-- **API-Verbindung**: Unified API Debug verwenden (`/unified-api-debug`)
+### Neue API-Struktur:
+Die Website verwendet jetzt eine **einheitliche API-Datei** (`/services/api.ts`) mit:
+- ✅ **Server Token Authentication** (DE-GH-FRONTEND)
+- ✅ **Strukturierte TypeScript-Typen**
+- ✅ **Umfassende Fehlerbehandlung**
+- ✅ **Debug-Funktionalität**
+- ✅ **Utility-Funktionen**
 
-### Debug-Routen verfügbar:
-- `/api-debug` - API-Verbindung testen
-- `/certificate-debug` - Zertifikat-Probleme
-- `/cors-test` - CORS-Konfiguration
-- `/cloudflare-debug` - Cloudflare-spezifische Tests
+### Environment-Variablen (.env):
+```bash
+# Gifthütte API Configuration
+VITE_API_BASE_URL=https://api.gifthuette.de
+
+# Server Token (DE-GH-FRONTEND: read, write, analytics, newsletter)
+VITE_GIFTHUETTE_SERVER_TOKEN=gifthuette_frontend_21841292325c61f529223b7d04abe9b495f99e21d654948c
+
+# Development Settings
+VITE_NODE_ENV=development
+VITE_DEBUG=true
+```
+
+### API-Features:
+- **Drinks Management**: CRUD-Operationen für Getränke
+- **Categories**: Kategorie-Verwaltung
+- **Locations**: Mobile Bar Standorte
+- **Highlights**: Besondere Angebote
+- **Search & Analytics**: Suche und Statistiken
+- **Authentication**: Benutzer-Login für Admin-Bereich
+
+### Debug-Ausgaben:
+Bei `VITE_DEBUG=true` erhalten Sie detaillierte Logs:
+- 🚀 API-Requests mit Method und URL
+- ✅ Erfolgreiche Responses
+- ❌ Fehler mit Details
+- 🔧 Token-Validierung
+
+### Troubleshooting:
+- **Token-Fehler**: Browser-Konsole prüfen für Token-Validierung
+- **Network-Errors**: API-Base-URL korrekt? Token vorhanden?
+- **403 Forbidden**: Server Token Berechtigungen prüfen
+- **CORS-Issues**: Server Token sollte CORS-Probleme vermeiden
+
+### API-Konfiguration:
+- Verwendet ausschließlich Server Token Authentication
+- Keine CORS/Cloudflare Fallbacks mehr
+- Vereinfachte Fehlerbehandlung
+- Direkte API-Verbindung zu `api.gifthuette.de`
 
 ---
 

@@ -1,77 +1,131 @@
-// API Service für Gifthütte
+/**
+ * ==========================================
+ * GIFTHÜTTE API SERVICE
+ * ==========================================
+ * 
+ * Einheitlicher API Service für die Gifthütte Website
+ * - Server Token Authentication (DE-GH-FRONTEND)
+ * - Saubere Typisierung mit TypeScript
+ * - Strukturierte Fehlerbehandlung
+ * - Debug-Funktionalität
+ * 
+ * @version 2.0.0
+ * @author Gifthütte Team
+ */
 
-// Environment configuration helper - inline to avoid circular dependencies
+// ==========================================
+// ENVIRONMENT & CONFIGURATION
+// ==========================================
+
 const getEnvVar = (key: string, defaultValue: string = ''): string => {
   try {
-    // Check if import.meta.env is available (Vite environment)
     if (typeof import.meta !== 'undefined' && import.meta.env) {
       return import.meta.env[key] || defaultValue;
     }
-    
-    // Fallback for other environments
     if (typeof process !== 'undefined' && process.env) {
       return process.env[key] || defaultValue;
     }
-    
     return defaultValue;
   } catch (error) {
-    console.warn(`Error accessing environment variable ${key}:`, error);
+    console.warn(`⚠️ Error accessing environment variable ${key}:`, error);
     return defaultValue;
   }
 };
 
-const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de');
-const STATIC_JWT_TOKEN = getEnvVar('VITE_JWT_TOKEN', '');
+// Configuration
+const CONFIG = {
+  API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de'),
+  SERVER_TOKEN: getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '') || 'gifthuette_frontend_21841292325c61f529223b7d04abe9b495f99e21d654948c',
+  DEBUG_MODE: getEnvVar('VITE_DEBUG') === 'true' || getEnvVar('VITE_DEBUG') === undefined,
+  NODE_ENV: getEnvVar('VITE_NODE_ENV', 'development'),
+} as const;
 
-// Debug environment on startup
-console.log('API Service Initialized:', {
-  API_BASE_URL,
-  HAS_JWT_TOKEN: !!STATIC_JWT_TOKEN,
-  JWT_TOKEN_LENGTH: STATIC_JWT_TOKEN.length,
-  JWT_TOKEN_START: STATIC_JWT_TOKEN ? STATIC_JWT_TOKEN.substring(0, 10) + '...' : 'none',
-  ENV_CHECK: {
-    hasImportMeta: typeof import.meta !== 'undefined',
-    hasImportMetaEnv: typeof import.meta !== 'undefined' && !!import.meta.env,
-    hasProcess: typeof process !== 'undefined',
-    hasProcessEnv: typeof process !== 'undefined' && !!process.env,
-    viteToken: import.meta?.env?.VITE_JWT_TOKEN ? 'present' : 'missing'
+// Validate configuration on startup
+const validateConfig = () => {
+  if (!CONFIG.SERVER_TOKEN) {
+    console.error('❌ CRITICAL: Gifthütte Server Token missing!');
+    console.error('   Please set VITE_GIFTHUETTE_SERVER_TOKEN in your .env file');
+    console.error('   Expected: gifthuette_frontend_...');
+    return false;
   }
-});
 
-// Types für API Responses
+  if (CONFIG.DEBUG_MODE) {
+    console.log('✅ Gifthütte API Service Configuration:', {
+      baseUrl: CONFIG.API_BASE_URL,
+      tokenType: 'server',
+      tokenLength: CONFIG.SERVER_TOKEN.length,
+      tokenPrefix: CONFIG.SERVER_TOKEN.substring(0, 25) + '...',
+      debugMode: CONFIG.DEBUG_MODE,
+      environment: CONFIG.NODE_ENV
+    });
+  }
+
+  return true;
+};
+
+const CONFIG_VALID = validateConfig();
+
+// ==========================================
+// TYPE DEFINITIONS
+// ==========================================
+
+/**
+ * Drink Variant - verschiedene Größen/Varianten eines Getränks
+ */
 export interface DrinkVariant {
   id: string;
   label: string;
   priceCents: number;
 }
 
+/**
+ * Drink Media - Bilder und Videos für Getränke
+ */
 export interface DrinkMedia {
   id: string;
   url: string;
-  alt: string;
+  type: 'IMAGE' | 'VIDEO';
+  altText?: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
+/**
+ * Drink - Hauptgetränk-Entity
+ */
 export interface Drink {
   id: string;
   slug: string;
   name: string;
   description: string;
   priceCents: number;
-  active: boolean;
   categoryId: string;
-  category: Category;
+  category?: Category;
   variants: DrinkVariant[];
   media: DrinkMedia[];
+  isActive: boolean;
+  tags: string[];
+  alcoholContent?: number;
+  ingredients: string[];
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Category - Getränke-Kategorien
+ */
+export interface Category {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Location - Standorte der mobilen Bar
+ */
 export interface Location {
   id: string;
   name: string;
@@ -79,8 +133,13 @@ export interface Location {
   city: string;
   date: string;
   isCurrent: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+/**
+ * Highlight - Besondere Angebote/Aktionen
+ */
 export interface Highlight {
   id: string;
   title: string;
@@ -88,25 +147,23 @@ export interface Highlight {
   startDate: string;
   endDate: string;
   isActive: boolean;
-}
-
-export interface NewsletterSubscriber {
-  id: string;
-  email: string;
-  confirmed: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
-export interface AuthResponse {
-  accessToken: string;
-}
-
+/**
+ * User - Benutzer-Entity
+ */
 export interface User {
   id: string;
   email: string;
+  name: string;
   role: 'ADMIN' | 'MANAGER' | 'CUSTOMER';
 }
 
+/**
+ * Paginated Response - Standard Pagination Format
+ */
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -115,27 +172,81 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Token Management
+/**
+ * API Response - Standard Response Wrapper
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Authentication Response
+ */
+export interface AuthResponse {
+  token: string;
+  user: User;
+  expiresAt: string;
+}
+
+// ==========================================
+// ERROR HANDLING
+// ==========================================
+
+/**
+ * Custom API Error Class
+ */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public message: string,
+    public data?: any,
+    public endpoint?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+
+  toString(): string {
+    return `ApiError [${this.status}]: ${this.message}${this.endpoint ? ` (${this.endpoint})` : ''}`;
+  }
+}
+
+// ==========================================
+// TOKEN MANAGEMENT
+// ==========================================
+
+/**
+ * Simple Token Manager für User-Authentication
+ * (Separate von Server Token)
+ */
 class TokenManager {
-  private static readonly TOKEN_KEY = 'gifthütte_token';
+  private static readonly TOKEN_KEY = 'gifthütte_user_token';
 
   static getToken(): string | null {
-    // First try to get dynamic token from localStorage
-    const dynamicToken = localStorage.getItem(this.TOKEN_KEY);
-    if (dynamicToken) {
-      return dynamicToken;
+    try {
+      return localStorage.getItem(this.TOKEN_KEY);
+    } catch {
+      return null;
     }
-    
-    // Fallback to static token from environment
-    return STATIC_JWT_TOKEN || null;
   }
 
   static setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    try {
+      localStorage.setItem(this.TOKEN_KEY, token);
+    } catch (error) {
+      console.warn('Failed to store user token:', error);
+    }
   }
 
   static removeToken(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
+    try {
+      localStorage.removeItem(this.TOKEN_KEY);
+    } catch (error) {
+      console.warn('Failed to remove user token:', error);
+    }
   }
 
   static isAuthenticated(): boolean {
@@ -151,43 +262,47 @@ class TokenManager {
   }
 }
 
-// API Error Class
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public message: string,
-    public data?: any
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+// ==========================================
+// API SERVICE CLASS
+// ==========================================
 
-// Base API Class
-class ApiService {
+/**
+ * Hauptklasse für alle API-Operationen
+ */
+class GifthuetteApiService {
+  
+  /**
+   * Basis-Request-Methode
+   */
   private async request<T>(
-    endpoint: string,
+    endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const token = TokenManager.getToken();
+    
+    // Validierung
+    if (!CONFIG_VALID) {
+      throw new ApiError(0, 'API configuration invalid - missing server token');
+    }
 
+    const url = `${CONFIG.API_BASE_URL}${endpoint}`;
+    
+    // Headers zusammenstellen
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${CONFIG.SERVER_TOKEN}`,
+      'X-Client': 'gifthütte-frontend',
+      'X-Version': '2.0.0',
       ...options.headers,
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Debug logging
-    if (getEnvVar('VITE_DEBUG') === 'true') {
-      console.log('API Request:', {
-        url,
+    // Debug-Ausgabe
+    if (CONFIG.DEBUG_MODE) {
+      console.log('🚀 API Request:', {
         method: options.method || 'GET',
-        hasToken: !!token,
-        tokenStart: token ? token.substring(0, 10) + '...' : 'none'
+        url,
+        endpoint,
+        hasServerToken: !!CONFIG.SERVER_TOKEN,
+        timestamp: new Date().toISOString()
       });
     }
 
@@ -197,104 +312,240 @@ class ApiService {
         headers,
         mode: 'cors',
         credentials: 'omit',
-        cache: 'no-cache',
       });
 
+      // Response Status prüfen
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-          url
-        });
+        
+        if (CONFIG.DEBUG_MODE) {
+          console.error('❌ API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            url,
+            endpoint,
+            errorData
+          });
+        }
+
         throw new ApiError(
           response.status,
           errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-          errorData
+          errorData,
+          endpoint
         );
       }
 
+      // Response parsen
       const contentType = response.headers.get('content-type');
+      let data: T;
+      
       if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+        data = await response.json();
+      } else {
+        data = (await response.text()) as unknown as T;
       }
 
-      return response.text() as any;
+      // Debug-Ausgabe für erfolgreiche Requests
+      if (CONFIG.DEBUG_MODE) {
+        console.log('✅ API Response:', {
+          endpoint,
+          status: response.status,
+          dataType: typeof data,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      return data;
+
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
       }
-      
-      // Enhanced error logging for debugging
-      console.error('Network Error:', {
+
+      // Network/Fetch Errors
+      console.error('❌ Network Error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         url,
         endpoint,
-        errorType: error instanceof TypeError ? 'TypeError (likely CORS/Network)' : 'Other',
-        stack: error instanceof Error ? error.stack : undefined
+        timestamp: new Date().toISOString()
       });
-      
-      // Specific error handling for different types
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new ApiError(0, 'Network error: Unable to connect to server (CORS/Network issue)');
-      }
-      
-      throw new ApiError(0, 'Network error or server unavailable');
+
+      throw new ApiError(
+        0,
+        `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error,
+        endpoint
+      );
     }
   }
 
-  // Health Check Method
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request<{ status: string; timestamp: string }>('/health');
+  // ==========================================
+  // SYSTEM & HEALTH
+  // ==========================================
+
+  /**
+   * Health Check - API Status prüfen
+   */
+  async healthCheck(): Promise<{ status: string; timestamp: string; version?: string }> {
+    return this.request<{ status: string; timestamp: string; version?: string }>('/health');
   }
 
-  // Auth Methods
+  /**
+   * Server Info abrufen
+   */
+  async getServerInfo(): Promise<{ version: string; environment: string; uptime: number }> {
+    return this.request<{ version: string; environment: string; uptime: number }>('/info');
+  }
+
+  /**
+   * Server Status abrufen (für Monitoring)
+   */
+  async getServerStatus(): Promise<{
+    status: string;
+    totalServers: number;
+    serverList: string[];
+    allowedIPs: string[];
+    tokensLoaded: number;
+    lastUpdated: string;
+  }> {
+    return this.request<{
+      status: string;
+      totalServers: number;
+      serverList: string[];
+      allowedIPs: string[];
+      tokensLoaded: number;
+      lastUpdated: string;
+    }>('/auth/server-status');
+  }
+
+  // ==========================================
+  // AUTHENTICATION
+  // ==========================================
+
+  /**
+   * Benutzer einloggen
+   */
   async login(email: string, password: string): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/login', {
+    const response = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+
+    // Token lokal speichern
+    if (response.token) {
+      TokenManager.setToken(response.token);
+    }
+
+    return response;
   }
 
-  async register(email: string, password: string): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+  /**
+   * Benutzer ausloggen
+   */
+  async logout(): Promise<void> {
+    try {
+      await this.request<void>('/auth/logout', { method: 'POST' });
+    } finally {
+      TokenManager.removeToken();
+    }
   }
 
+  /**
+   * Aktuellen Benutzer abrufen
+   */
   async getMe(): Promise<User> {
     return this.request<User>('/auth/me');
   }
 
-  // Drinks Methods
+  /**
+   * Token validieren
+   */
+  async validateToken(): Promise<{ valid: boolean; user?: User }> {
+    try {
+      const user = await this.getMe();
+      return { valid: true, user };
+    } catch {
+      return { valid: false };
+    }
+  }
+
+  // ==========================================
+  // DRINKS MANAGEMENT
+  // ==========================================
+
+  /**
+   * Getränke abrufen (mit Filterung und Pagination)
+   */
   async getDrinks(params?: {
     q?: string;
     category?: string;
     page?: number;
     pageSize?: number;
+    isActive?: boolean;
+    sortBy?: 'name' | 'price' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
   }): Promise<PaginatedResponse<Drink>> {
     const searchParams = new URLSearchParams();
+    
     if (params?.q) searchParams.append('q', params.q);
     if (params?.category) searchParams.append('category', params.category);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
+    if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+    if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
     const endpoint = `/drinks${searchParams.toString() ? `?${searchParams}` : ''}`;
     return this.request<PaginatedResponse<Drink>>(endpoint);
   }
 
+  /**
+   * Enhanced Drinks abrufen (mit Frontend-Token)
+   */
+  async getDrinksEnhanced(params?: {
+    q?: string;
+    category?: string;
+    page?: number;
+    pageSize?: number;
+    isActive?: boolean;
+    sortBy?: 'name' | 'price' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<Drink[]> {
+    const searchParams = new URLSearchParams();
+    
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.category) searchParams.append('category', params.category);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
+    if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+    if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
+
+    const endpoint = `/drinks/enhanced${searchParams.toString() ? `?${searchParams}` : ''}`;
+    return this.request<Drink[]>(endpoint);
+  }
+
+  /**
+   * Einzelnes Getränk abrufen
+   */
   async getDrink(slug: string): Promise<Drink> {
     return this.request<Drink>(`/drinks/${slug}`);
   }
 
+  /**
+   * Getränk erstellen
+   */
   async createDrink(data: {
     slug: string;
     name: string;
     description: string;
     priceCents: number;
     categoryId: string;
+    tags?: string[];
+    alcoholContent?: number;
+    ingredients?: string[];
+    isActive?: boolean;
   }): Promise<Drink> {
     return this.request<Drink>('/drinks', {
       method: 'POST',
@@ -302,6 +553,9 @@ class ApiService {
     });
   }
 
+  /**
+   * Getränk aktualisieren
+   */
   async updateDrink(id: string, data: Partial<Drink>): Promise<Drink> {
     return this.request<Drink>(`/drinks/${id}`, {
       method: 'PUT',
@@ -309,28 +563,75 @@ class ApiService {
     });
   }
 
+  /**
+   * Getränk löschen
+   */
   async deleteDrink(id: string): Promise<void> {
     return this.request<void>(`/drinks/${id}`, {
       method: 'DELETE',
     });
   }
 
-  // Categories Methods
-  async getCategories(): Promise<Category[]> {
-    return this.request<Category[]>('/categories');
+  /**
+   * Getränk-Varianten verwalten
+   */
+  async addDrinkVariant(drinkId: string, variant: Omit<DrinkVariant, 'id'>): Promise<DrinkVariant> {
+    return this.request<DrinkVariant>(`/drinks/${drinkId}/variants`, {
+      method: 'POST',
+      body: JSON.stringify(variant),
+    });
   }
 
+  async updateDrinkVariant(drinkId: string, variantId: string, data: Partial<DrinkVariant>): Promise<DrinkVariant> {
+    return this.request<DrinkVariant>(`/drinks/${drinkId}/variants/${variantId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDrinkVariant(drinkId: string, variantId: string): Promise<void> {
+    return this.request<void>(`/drinks/${drinkId}/variants/${variantId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==========================================
+  // CATEGORIES MANAGEMENT
+  // ==========================================
+
+  /**
+   * Kategorien abrufen
+   */
+  async getCategories(includeInactive?: boolean): Promise<Category[]> {
+    const params = includeInactive ? '?includeInactive=true' : '';
+    return this.request<Category[]>(`/categories${params}`);
+  }
+
+  /**
+   * Einzelne Kategorie abrufen (mit Getränken)
+   */
   async getCategory(slug: string): Promise<Category & { drinks: Drink[] }> {
     return this.request<Category & { drinks: Drink[] }>(`/categories/${slug}`);
   }
 
-  async createCategory(data: { slug: string; name: string }): Promise<Category> {
+  /**
+   * Kategorie erstellen
+   */
+  async createCategory(data: { 
+    slug: string; 
+    name: string; 
+    description?: string;
+    sortOrder?: number;
+  }): Promise<Category> {
     return this.request<Category>('/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
+  /**
+   * Kategorie aktualisieren
+   */
   async updateCategory(id: string, data: Partial<Category>): Promise<Category> {
     return this.request<Category>(`/categories/${id}`, {
       method: 'PUT',
@@ -338,17 +639,29 @@ class ApiService {
     });
   }
 
+  /**
+   * Kategorie löschen
+   */
   async deleteCategory(id: string): Promise<void> {
     return this.request<void>(`/categories/${id}`, {
       method: 'DELETE',
     });
   }
 
-  // Locations Methods
+  // ==========================================
+  // LOCATIONS MANAGEMENT
+  // ==========================================
+
+  /**
+   * Kommende Standorte abrufen
+   */
   async getUpcomingLocations(): Promise<Location[]> {
     return this.request<Location[]>('/locations/upcoming');
   }
 
+  /**
+   * Aktuellen Standort abrufen
+   */
   async getCurrentLocation(): Promise<Location | null> {
     try {
       return await this.request<Location>('/locations/current');
@@ -360,6 +673,16 @@ class ApiService {
     }
   }
 
+  /**
+   * Alle Standorte abrufen
+   */
+  async getLocations(): Promise<Location[]> {
+    return this.request<Location[]>('/locations');
+  }
+
+  /**
+   * Standort erstellen
+   */
   async createLocation(data: {
     name: string;
     address: string;
@@ -373,6 +696,9 @@ class ApiService {
     });
   }
 
+  /**
+   * Standort aktualisieren
+   */
   async updateLocation(id: string, data: Partial<Location>): Promise<Location> {
     return this.request<Location>(`/locations/${id}`, {
       method: 'PUT',
@@ -380,23 +706,39 @@ class ApiService {
     });
   }
 
+  /**
+   * Standort löschen
+   */
   async deleteLocation(id: string): Promise<void> {
     return this.request<void>(`/locations/${id}`, {
       method: 'DELETE',
     });
   }
 
+  /**
+   * Aktuellen Standort setzen
+   */
   async setCurrentLocation(id: string): Promise<void> {
     return this.request<void>(`/locations/${id}/set-current`, {
       method: 'POST',
     });
   }
 
-  // Highlights Methods
-  async getHighlights(): Promise<Highlight[]> {
-    return this.request<Highlight[]>('/highlights');
+  // ==========================================
+  // HIGHLIGHTS MANAGEMENT
+  // ==========================================
+
+  /**
+   * Highlights abrufen
+   */
+  async getHighlights(activeOnly?: boolean): Promise<Highlight[]> {
+    const params = activeOnly ? '?activeOnly=true' : '';
+    return this.request<Highlight[]>(`/highlights${params}`);
   }
 
+  /**
+   * Highlight erstellen
+   */
   async createHighlight(data: {
     title: string;
     description: string;
@@ -410,6 +752,9 @@ class ApiService {
     });
   }
 
+  /**
+   * Highlight aktualisieren
+   */
   async updateHighlight(id: string, data: Partial<Highlight>): Promise<Highlight> {
     return this.request<Highlight>(`/highlights/${id}`, {
       method: 'PUT',
@@ -417,33 +762,70 @@ class ApiService {
     });
   }
 
+  /**
+   * Highlight löschen
+   */
   async deleteHighlight(id: string): Promise<void> {
     return this.request<void>(`/highlights/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async deactivateHighlight(id: string): Promise<void> {
-    return this.request<void>(`/highlights/${id}/deactivate`, {
-      method: 'POST',
-    });
+  // ==========================================
+  // SOCIAL MEDIA
+  // ==========================================
+
+  /**
+   * Instagram Feed abrufen
+   */
+  async getInstagramFeed(): Promise<Array<{
+    id: string;
+    caption: string;
+    media_type: 'IMAGE' | 'VIDEO';
+    media_url: string;
+    permalink: string;
+    timestamp: string;
+  }>> {
+    const response = await this.request<{
+      data: Array<{
+        id: string;
+        caption: string;
+        media_type: 'IMAGE' | 'VIDEO';
+        media_url: string;
+        permalink: string;
+        timestamp: string;
+      }>;
+    }>('/social/instagram');
+    return response.data;
   }
 
-  // Newsletter Methods
-  async subscribeNewsletter(email: string): Promise<void> {
-    return this.request<void>('/newsletter/subscribe', {
+  // ==========================================
+  // NEWSLETTER
+  // ==========================================
+
+  /**
+   * Newsletter abonnieren
+   */
+  async subscribeNewsletter(email: string): Promise<{
+    id: string;
+    email: string;
+    confirmed: boolean;
+    createdAt: string;
+  }> {
+    return this.request<{
+      id: string;
+      email: string;
+      confirmed: boolean;
+      createdAt: string;
+    }>('/newsletter/subscribe', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
-  async confirmNewsletter(email: string): Promise<void> {
-    return this.request<void>('/newsletter/confirm', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  }
-
+  /**
+   * Newsletter abmelden
+   */
   async unsubscribeNewsletter(email: string): Promise<void> {
     return this.request<void>('/newsletter/unsubscribe', {
       method: 'DELETE',
@@ -451,404 +833,154 @@ class ApiService {
     });
   }
 
-  async getNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
-    return this.request<NewsletterSubscriber[]>('/newsletter');
-  }
+  // ==========================================
+  // SEARCH & ANALYTICS
+  // ==========================================
 
-  // Social Methods
-  async getInstagramFeed(): Promise<any[]> {
-    return this.request<any[]>('/social/instagram');
-  }
-
-  // Debug Methods
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request<{ status: string; timestamp: string }>('/health');
-  }
-}
-
-// Mock Data für Offline Fallback
-const MOCK_CATEGORIES: Category[] = [
-  { id: '1', name: 'Cocktails', slug: 'cocktails' },
-  { id: '2', name: 'Shots', slug: 'shots' },
-  { id: '3', name: 'Longdrinks', slug: 'longdrinks' },
-  { id: '4', name: 'Signature Drinks', slug: 'signature' },
-  { id: '5', name: 'Alkoholfrei', slug: 'alkoholfrei' }
-];
-
-const MOCK_DRINKS: Drink[] = [
-  {
-    id: '1',
-    slug: 'toxic-punch',
-    name: 'Toxic Punch',
-    description: 'Ein mysteriöser grüner Cocktail mit einer geheimen Mischung aus exotischen Früchten und einem Hauch von Minze.',
-    priceCents: 850,
-    active: true,
-    categoryId: '4',
-    category: MOCK_CATEGORIES[3],
-    variants: [
-      { id: '1-1', label: 'Regular', priceCents: 850 },
-      { id: '1-2', label: 'Double', priceCents: 1500 }
-    ],
-    media: [{
-      id: '1-img',
-      url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b',
-      alt: 'Toxic Punch'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '2',
-    slug: 'poison-apple',
-    name: 'Poison Apple',
-    description: 'Ein verführerischer roter Cocktail mit Apfelgeschmack und einem geheimnisvollen Glanz.',
-    priceCents: 750,
-    active: true,
-    categoryId: '1',
-    category: MOCK_CATEGORIES[0],
-    variants: [
-      { id: '2-1', label: 'Regular', priceCents: 750 }
-    ],
-    media: [{
-      id: '2-img',
-      url: 'https://images.unsplash.com/photo-1541746972996-4e0b0f93e586',
-      alt: 'Poison Apple'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '3',
-    slug: 'witch-brew',
-    name: 'Witch\'s Brew',
-    description: 'Ein dunkler, geheimnisvoller Drink mit Kräutern und magischen Zutaten.',
-    priceCents: 900,
-    active: true,
-    categoryId: '4',
-    category: MOCK_CATEGORIES[3],
-    variants: [
-      { id: '3-1', label: 'Regular', priceCents: 900 }
-    ],
-    media: [{
-      id: '3-img',
-      url: 'https://images.unsplash.com/photo-1587223075055-82e9a937ddff',
-      alt: 'Witch\'s Brew'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '4',
-    slug: 'green-elixir',
-    name: 'Green Elixir',
-    description: 'Ein heilkräftiger grüner Shot mit intensivem Geschmack.',
-    priceCents: 350,
-    active: true,
-    categoryId: '2',
-    category: MOCK_CATEGORIES[1],
-    variants: [
-      { id: '4-1', label: 'Single', priceCents: 350 },
-      { id: '4-2', label: '3er Pack', priceCents: 950 }
-    ],
-    media: [{
-      id: '4-img',
-      url: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f',
-      alt: 'Green Elixir'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '5',
-    slug: 'mystic-mule',
-    name: 'Mystic Mule',
-    description: 'Ein erfrischender Longdrink mit Ingwer und mysteriösen Kräutern.',
-    priceCents: 650,
-    active: true,
-    categoryId: '3',
-    category: MOCK_CATEGORIES[2],
-    variants: [
-      { id: '5-1', label: 'Regular', priceCents: 650 }
-    ],
-    media: [{
-      id: '5-img',
-      url: 'https://images.unsplash.com/photo-1546171753-97d7676e4602',
-      alt: 'Mystic Mule'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '6',
-    slug: 'magic-potion',
-    name: 'Magic Potion',
-    description: 'Ein alkoholfreier, schillernder Drink voller Magie und Geschmack.',
-    priceCents: 450,
-    active: true,
-    categoryId: '5',
-    category: MOCK_CATEGORIES[4],
-    variants: [
-      { id: '6-1', label: 'Regular', priceCents: 450 }
-    ],
-    media: [{
-      id: '6-img',
-      url: 'https://images.unsplash.com/photo-1595981267035-7b04ca84a82d',
-      alt: 'Magic Potion'
-    }],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  }
-];
-
-const MOCK_HIGHLIGHTS: Highlight[] = [
-  {
-    id: '1',
-    title: 'Halloween Special',
-    description: 'Gruseliges Halloween-Event mit speziellen Cocktails',
-    startDate: '2024-10-25T00:00:00Z',
-    endDate: '2024-11-02T23:59:59Z',
-    isActive: true
-  },
-  {
-    id: '2',
-    title: 'Happy Hour',
-    description: '20% Rabatt auf alle Signature Drinks',
-    startDate: '2024-01-01T17:00:00Z',
-    endDate: '2024-12-31T19:00:00Z',
-    isActive: true
-  }
-];
-
-const MOCK_LOCATION: Location = {
-  id: '1',
-  name: 'Weihnachtsmarkt Dresden',
-  address: 'Altmarkt 1',
-  city: 'Dresden',
-  date: '2024-12-01',
-  isCurrent: true
-};
-
-const MOCK_USER: User = {
-  id: '1',
-  email: 'admin@gifthuette.de',
-  role: 'ADMIN'
-};
-
-// Enhanced API Service with Offline Fallback
-class ApiServiceWithFallback extends ApiService {
-  private isOnline = true;
-  private healthCheckTimer: NodeJS.Timeout | null = null;
-
-  constructor() {
-    super();
-    this.startHealthMonitoring();
-  }
-
-  private startHealthMonitoring() {
-    // Check API health every 30 seconds
-    this.healthCheckTimer = setInterval(async () => {
-      try {
-        await this.healthCheck();
-        if (!this.isOnline) {
-          console.log('✅ API is back online');
-          this.isOnline = true;
-        }
-      } catch {
-        if (this.isOnline) {
-          console.log('❌ API is offline, using mock data');
-          this.isOnline = false;
-        }
-      }
-    }, 30000);
-
-    // Initial check
-    this.healthCheck().catch(() => {
-      this.isOnline = false;
-      console.log('❌ API offline on startup, using mock data');
+  /**
+   * Globale Suche
+   */
+  async search(query: string, filters?: {
+    categories?: string[];
+    tags?: string[];
+    alcoholContent?: { min?: number; max?: number };
+    price?: { min?: number; max?: number };
+  }): Promise<{
+    drinks: Drink[];
+    categories: Category[];
+    totalResults: number;
+  }> {
+    return this.request<{
+      drinks: Drink[];
+      categories: Category[];
+      totalResults: number;
+    }>('/search', {
+      method: 'POST',
+      body: JSON.stringify({ query, filters }),
     });
   }
 
-  // Override methods with offline fallback
-  async getMe(): Promise<User> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock user data (offline mode)');
-      return MOCK_USER;
-    }
-    
-    try {
-      return await super.getMe();
-    } catch (error) {
-      console.log('🔄 Falling back to mock user data');
-      this.isOnline = false;
-      return MOCK_USER;
-    }
+  /**
+   * Suchvorschläge
+   */
+  async getSearchSuggestions(query: string): Promise<{
+    drinks: string[];
+    ingredients: string[];
+    categories: string[];
+  }> {
+    return this.request<{
+      drinks: string[];
+      ingredients: string[];
+      categories: string[];
+    }>(`/search/suggestions?q=${encodeURIComponent(query)}`);
   }
 
-  async getDrinks(params?: {
-    q?: string;
-    category?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<PaginatedResponse<Drink>> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock drinks data (offline mode)');
-      let filteredDrinks = [...MOCK_DRINKS];
-      
-      // Apply filters
-      if (params?.q) {
-        const query = params.q.toLowerCase();
-        filteredDrinks = filteredDrinks.filter(drink => 
-          drink.name.toLowerCase().includes(query) ||
-          drink.description.toLowerCase().includes(query)
-        );
-      }
-      
-      if (params?.category) {
-        const category = MOCK_CATEGORIES.find(c => c.slug === params.category);
-        if (category) {
-          filteredDrinks = filteredDrinks.filter(drink => drink.categoryId === category.id);
-        }
-      }
-      
-      // Apply pagination
-      const page = params?.page || 1;
-      const pageSize = params?.pageSize || 10;
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = filteredDrinks.slice(startIndex, endIndex);
-      
-      return {
-        data: paginatedData,
-        total: filteredDrinks.length,
-        page,
-        pageSize,
-        totalPages: Math.ceil(filteredDrinks.length / pageSize)
-      };
-    }
-    
-    try {
-      return await super.getDrinks(params);
-    } catch (error) {
-      console.log('🔄 Falling back to mock drinks data');
-      this.isOnline = false;
-      return this.getDrinks(params); // Recursive call will use offline mode
-    }
-  }
-
-  async getCategories(): Promise<Category[]> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock categories data (offline mode)');
-      return MOCK_CATEGORIES;
-    }
-    
-    try {
-      return await super.getCategories();
-    } catch (error) {
-      console.log('🔄 Falling back to mock categories data');
-      this.isOnline = false;
-      return MOCK_CATEGORIES;
-    }
-  }
-
-  async getHighlights(): Promise<Highlight[]> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock highlights data (offline mode)');
-      return MOCK_HIGHLIGHTS;
-    }
-    
-    try {
-      return await super.getHighlights();
-    } catch (error) {
-      console.log('🔄 Falling back to mock highlights data');
-      this.isOnline = false;
-      return MOCK_HIGHLIGHTS;
-    }
-  }
-
-  async getCurrentLocation(): Promise<Location | null> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock location data (offline mode)');
-      return MOCK_LOCATION;
-    }
-    
-    try {
-      return await super.getCurrentLocation();
-    } catch (error) {
-      console.log('🔄 Falling back to mock location data');
-      this.isOnline = false;
-      return MOCK_LOCATION;
-    }
-  }
-
-  async getInstagramFeed(): Promise<any[]> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock Instagram data (offline mode)');
-      return [
-        {
-          id: '1',
-          media_url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b',
-          caption: 'Toxic Punch in Aktion! 🧪⚗️ #Gifthütte #ToxicPunch',
-          permalink: '#'
-        },
-        {
-          id: '2',
-          media_url: 'https://images.unsplash.com/photo-1541746972996-4e0b0f93e586',
-          caption: 'Der perfekte Poison Apple 🍎🔮 #Gifthütte #PoisonApple',
-          permalink: '#'
-        },
-        {
-          id: '3',
-          media_url: 'https://images.unsplash.com/photo-1587223075055-82e9a937ddff',
-          caption: 'Witch\'s Brew brodelt! 🧙‍♀️✨ #Gifthütte #WitchsBrew',
-          permalink: '#'
-        }
-      ];
-    }
-    
-    try {
-      return await super.getInstagramFeed();
-    } catch (error) {
-      console.log('🔄 Falling back to mock Instagram data');
-      this.isOnline = false;
-      return this.getInstagramFeed(); // Recursive call will use offline mode
-    }
-  }
-
-  async login(email: string, password: string): Promise<AuthResponse> {
-    if (!this.isOnline) {
-      console.log('🔄 Using mock login (offline mode)');
-      // Simulate successful login with mock token
-      const mockToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaWZ0aHVldHRlIiwiaWF0IjoxNzM0MDI2NDAwLCJleHAiOjE3NjU1NjI0MDAsImF1ZCI6ImdpZnRodWV0dGUuZGUiLCJzdWIiOiJhZG1pbkBnaWZ0aHVldHRlLmRlIiwicm9sZSI6IkFETUlOIn0.mock-signature-for-offline-mode';
-      return { accessToken: mockToken };
-    }
-    
-    try {
-      return await super.login(email, password);
-    } catch (error) {
-      console.log('🔄 Falling back to mock login');
-      this.isOnline = false;
-      return this.login(email, password); // Recursive call will use offline mode
-    }
-  }
-
-  // API Status getter
-  getApiStatus(): { isOnline: boolean; message: string } {
-    return {
-      isOnline: this.isOnline,
-      message: this.isOnline 
-        ? 'API verbunden'
-        : 'Offline-Modus (Mock-Daten)'
-    };
-  }
-
-  // Clean up timer on destruction
-  destroy() {
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer);
-    }
+  /**
+   * Analytics-Daten abrufen (für Admin)
+   */
+  async getAnalytics(timeframe: 'day' | 'week' | 'month' | 'year' = 'week'): Promise<{
+    popularDrinks: Array<{ drink: Drink; views: number; orders?: number }>;
+    categoryStats: Array<{ category: Category; drinkCount: number; popularity: number }>;
+    searchStats: Array<{ query: string; count: number }>;
+    timeframe: string;
+  }> {
+    return this.request<{
+      popularDrinks: Array<{ drink: Drink; views: number; orders?: number }>;
+      categoryStats: Array<{ category: Category; drinkCount: number; popularity: number }>;
+      searchStats: Array<{ query: string; count: number }>;
+      timeframe: string;
+    }>(`/analytics?timeframe=${timeframe}`);
   }
 }
 
-// Export enhanced instance
-export const api = new ApiServiceWithFallback();
-export { TokenManager };
+// ==========================================
+// SINGLETON EXPORT
+// ==========================================
+
+/**
+ * Singleton API Instance
+ */
+export const api = new GifthuetteApiService();
+
+/**
+ * Token Manager Export
+ */
+export const tokenManager = TokenManager;
+
+/**
+ * Configuration Export
+ */
+export const config = CONFIG;
+
+/**
+ * Default Export
+ */
+export default api;
+
+// ==========================================
+// UTILITY EXPORTS
+// ==========================================
+
+/**
+ * Hilfsfunktionen für häufige Operationen
+ */
+export const ApiUtils = {
+  /**
+   * Preis in Euro formatieren
+   */
+  formatPrice: (priceCents: number): string => {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(priceCents / 100);
+  },
+
+  /**
+   * Datum formatieren
+   */
+  formatDate: (dateString: string): string => {
+    return new Intl.DateTimeFormat('de-DE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateString));
+  },
+
+  /**
+   * API Error Handler
+   */
+  handleApiError: (error: unknown): string => {
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return 'Ein unbekannter Fehler ist aufgetreten';
+  },
+
+  /**
+   * URL-Safe Slug erstellen
+   */
+  createSlug: (text: string): string => {
+    return text
+      .toLowerCase()
+      .replace(/[äöüß]/g, (match) => {
+        const map: { [key: string]: string } = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
+        return map[match] || match;
+      })
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  },
+
+  /**
+   * Check if user has permission
+   */
+  hasPermission: (user: User | null, requiredRole: User['role']): boolean => {
+    if (!user) return false;
+    const roleHierarchy = { 'CUSTOMER': 0, 'MANAGER': 1, 'ADMIN': 2 };
+    return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  }
+};
