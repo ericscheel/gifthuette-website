@@ -15,6 +15,7 @@ import { MysticalEffects } from './mystical-effects';
 import { ApiStatus } from './api-status';
 import { ApiTest } from './api-test';
 import { EnvDebug } from './env-debug';
+import { getEnvVar  } from '../utils/env';
 import { NetworkTest } from './network-test';
 import { toast } from 'sonner@2.0.3';
 import { 

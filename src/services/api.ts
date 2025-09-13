@@ -17,6 +17,7 @@
 // ENVIRONMENT & CONFIGURATION
 // ==========================================
 
+
 const getEnvVar = (key: string, defaultValue: string = ""): string => {
   try {
     if (typeof import.meta !== "undefined" && import.meta.env) {
