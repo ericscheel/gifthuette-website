@@ -855,7 +855,7 @@ class GifthuetteApiService {
    * Alle Standorte abrufen
    */
   async getLocations(): Promise<Location[]> {
-    return this.request<Location[]>("/locations");
+    return this.request<Location[]>("/locations/all");
   }
 
   /**
