@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -16,6 +16,7 @@ import { ApiStatus } from './api-status';
 import { ApiTest } from './api-test';
 import { EnvDebug } from './env-debug';
 import { NetworkTest } from './network-test';
+import { toast } from 'sonner@2.0.3';
 import { 
   Plus, 
   Edit2, 
@@ -32,8 +33,19 @@ import {
   Settings,
   Calendar,
   DollarSign,
-  Tag
+  Tag,
+  Loader2
 } from 'lucide-react';
+
+// Import API services and types
+import { 
+  api, 
+  type Drink, 
+  type Category, 
+  type Location, 
+  type Highlight, 
+  ApiUtils 
+} from '../services/api';
 
 interface AdminPageProps {
   setCurrentPage: (page: string) => void;
@@ -41,8 +53,9 @@ interface AdminPageProps {
   onLogout?: () => void;
 }
 
-interface Drink {
-  id: number;
+// Local admin types for simplified display
+interface AdminDrink {
+  id: string;
   name: string;
   description: string;
   price: string;
@@ -51,24 +64,27 @@ interface Drink {
   image: string;
   featured: boolean;
   ingredients: string[];
+  slug: string;
+  priceCents: number;
+  categoryId: string;
+  active: boolean;
 }
 
-interface Category {
-  id: number;
+interface AdminCategory {
+  id: string;
   name: string;
-  icon: string;
-  count: number;
+  slug: string;
   description: string;
+  count: number;
 }
 
-interface Location {
-  id: number;
+interface AdminLocation {
+  id: string;
   name: string;
   address: string;
   city: string;
-  eventType: string;
   date: string;
-  status: 'upcoming' | 'active' | 'completed';
+  isCurrent: boolean;
 }
 
 interface AnalyticsData {
@@ -83,71 +99,24 @@ interface AnalyticsData {
 }
 
 export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: AdminPageProps) {
-  // Mock Data
-  const [drinks, setDrinks] = useState<Drink[]>([
-    {
-      id: 1,
-      name: "Giftiger Apfel",
-      description: "Unser Signature-Cocktail mit geheimen Zutaten",
-      price: "12.50€",
-      alcohol: "18%",
-      category: "Signature Cocktails",
-      image: "https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      ingredients: ["Vodka", "Apfelschnapps", "Limettensaft", "Geheimer Sirup"]
-    },
-    {
-      id: 2,
-      name: "Schwarze Witwe",
-      description: "Ein dunkler Cocktail mit überraschender Süße",
-      price: "11.00€",
-      alcohol: "22%",
-      category: "Signature Cocktails",
-      image: "https://images.unsplash.com/photo-1681821675154-5f50ede43f6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGdsYXNzJTIwZGFyayUyMGJhcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      featured: true,
-      ingredients: ["Bourbon", "Blackberry Syrup", "Zitronensaft", "Bitter"]
-    }
-  ]);
+  // State for data
+  const [drinks, setDrinks] = useState<AdminDrink[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [locations, setLocations] = useState<AdminLocation[]>([]);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
-  const [categories, setCategories] = useState<Category[]>([
-    { id: 1, name: "Signature Cocktails", icon: "🧪", count: 12, description: "Unsere eigenen Kreationen" },
-    { id: 2, name: "Klassische Cocktails", icon: "🍸", count: 8, description: "Zeitlose Klassiker" },
-    { id: 3, name: "Shots & Schnäpse", icon: "🥃", count: 15, description: "Für den schnellen Genuss" },
-    { id: 4, name: "Alkoholfreie Getränke", icon: "🧃", count: 6, description: "Erfrischende Alternativen" }
-  ]);
-
-  const [locations, setLocations] = useState<Location[]>([
-    { id: 1, name: "Stadtfest München", address: "Marienplatz 1", city: "München", eventType: "Stadtfest", date: "2025-09-15", status: "upcoming" },
-    { id: 2, name: "Hochzeit Schmidt", address: "Schloss Neuschwanstein", city: "Schwangau", eventType: "Privatfeier", date: "2025-09-20", status: "upcoming" },
-    { id: 3, name: "Oktoberfest Satellit", address: "Festplatz", city: "Augsburg", eventType: "Volksfest", date: "2025-09-12", status: "active" }
-  ]);
-
-  const analyticsData: AnalyticsData = {
-    pageViews: 15420,
-    uniqueVisitors: 8750,
-    bounceRate: 34.2,
-    avgSessionDuration: "3:45",
-    topPages: [
-      { page: "/drinks", views: 5840 },
-      { page: "/", views: 4320 },
-      { page: "/contact", views: 2180 },
-      { page: "/search", views: 1650 }
-    ],
-    drinkSearches: [
-      { term: "Cocktail", count: 890 },
-      { term: "Signature", count: 650 },
-      { term: "Alkoholfrei", count: 420 },
-      { term: "Shot", count: 380 }
-    ],
-    conversionRate: 12.5,
-    mobileTraffic: 67.8
-  };
+  // Loading states
+  const [loadingDrinks, setLoadingDrinks] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // State for modals and forms
   const [isAddDrinkOpen, setIsAddDrinkOpen] = useState(false);
   const [isEditDrinkOpen, setIsEditDrinkOpen] = useState(false);
-  const [editingDrink, setEditingDrink] = useState<Drink | null>(null);
-  const [newDrink, setNewDrink] = useState<Partial<Drink>>({
+  const [editingDrink, setEditingDrink] = useState<AdminDrink | null>(null);
+  const [newDrink, setNewDrink] = useState<Partial<AdminDrink>>({
     name: '',
     description: '',
     price: '',
@@ -159,101 +128,289 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   });
 
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState<Partial<Category>>({
+  const [newCategory, setNewCategory] = useState<Partial<AdminCategory>>({
     name: '',
-    icon: '',
     description: ''
   });
 
   const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
-  const [newLocation, setNewLocation] = useState<Partial<Location>>({
+  const [newLocation, setNewLocation] = useState<Partial<AdminLocation>>({
     name: '',
     address: '',
     city: '',
-    eventType: '',
     date: '',
-    status: 'upcoming'
+    isCurrent: false
   });
 
   const [ingredientInput, setIngredientInput] = useState('');
 
-  // CRUD Functions for Drinks
-  const handleAddDrink = () => {
-    if (newDrink.name && newDrink.price && newDrink.category) {
-      const drink: Drink = {
-        id: Math.max(...drinks.map(d => d.id)) + 1,
-        name: newDrink.name!,
-        description: newDrink.description || '',
-        price: newDrink.price!,
-        alcohol: newDrink.alcohol || '0%',
-        category: newDrink.category!,
-        image: newDrink.image || 'https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080',
-        featured: newDrink.featured || false,
-        ingredients: newDrink.ingredients || []
-      };
-      setDrinks([...drinks, drink]);
-      setNewDrink({ name: '', description: '', price: '', alcohol: '', category: '', image: '', featured: false, ingredients: [] });
-      setIsAddDrinkOpen(false);
+  // Data loading functions
+  const loadDrinks = async () => {
+    setLoadingDrinks(true);
+    try {
+      const response = await api.getDrinks({ page: 1, pageSize: 100 });
+      const adminDrinks: AdminDrink[] = response.drinks.map(drink => ({
+        id: drink.id,
+        name: drink.name,
+        description: drink.description,
+        price: ApiUtils.formatPrice(drink.priceCents),
+        alcohol: drink.alcoholPercentage || '0%',
+        category: drink.category?.name || '',
+        image: drink.media[0]?.url || '',
+        featured: drink.tags?.some(tag => tag.tag.name.toLowerCase() === 'featured') || false,
+        ingredients: drink.ingredients.map(ing => ing.ingredient.name),
+        slug: drink.slug,
+        priceCents: drink.priceCents,
+        categoryId: drink.categoryId,
+        active: drink.active
+      }));
+      setDrinks(adminDrinks);
+    } catch (error) {
+      console.error('Error loading drinks:', error);
+      toast.error('Fehler beim Laden der Getränke: ' + ApiUtils.handleApiError(error));
+    } finally {
+      setLoadingDrinks(false);
     }
   };
 
-  const handleEditDrink = (drink: Drink) => {
+  const loadCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const apiCategories = await api.getCategories(true);
+      const adminCategories: AdminCategory[] = apiCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description || '',
+        count: cat.drinks?.length || 0
+      }));
+      setCategories(adminCategories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      toast.error('Fehler beim Laden der Kategorien: ' + ApiUtils.handleApiError(error));
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const loadLocations = async () => {
+    setLoadingLocations(true);
+    try {
+      const apiLocations = await api.getLocations();
+      const adminLocations: AdminLocation[] = apiLocations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        address: loc.address,
+        city: loc.city,
+        date: loc.date,
+        isCurrent: loc.isCurrent
+      }));
+      setLocations(adminLocations);
+    } catch (error) {
+      console.error('Error loading locations:', error);
+      toast.error('Fehler beim Laden der Standorte: ' + ApiUtils.handleApiError(error));
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      // For now, we'll use mock analytics data since the API might not have this endpoint yet
+      // In the future, this would be: const analytics = await api.getAnalytics();
+      setAnalyticsData({
+        pageViews: 15420,
+        uniqueVisitors: 8750,
+        bounceRate: 34.2,
+        avgSessionDuration: "3:45",
+        topPages: [
+          { page: "/drinks", views: 5840 },
+          { page: "/", views: 4320 },
+          { page: "/contact", views: 2180 },
+          { page: "/search", views: 1650 }
+        ],
+        drinkSearches: [
+          { term: "Cocktail", count: 890 },
+          { term: "Signature", count: 650 },
+          { term: "Alkoholfrei", count: 420 },
+          { term: "Shot", count: 380 }
+        ],
+        conversionRate: 12.5,
+        mobileTraffic: 67.8
+      });
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+      toast.error('Fehler beim Laden der Analytics: ' + ApiUtils.handleApiError(error));
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    loadDrinks();
+    loadCategories();
+    loadLocations();
+    loadAnalytics();
+  }, []);
+
+  // CRUD Functions for Drinks
+  const handleAddDrink = async () => {
+    if (newDrink.name && newDrink.price && newDrink.category) {
+      try {
+        const category = categories.find(c => c.name === newDrink.category);
+        if (!category) {
+          toast.error('Kategorie nicht gefunden');
+          return;
+        }
+
+        const priceCents = Math.round(parseFloat(newDrink.price.replace(/[^\d.,]/g, '').replace(',', '.')) * 100);
+        
+        await api.createDrink({
+          slug: ApiUtils.createSlug(newDrink.name!),
+          name: newDrink.name!,
+          description: newDrink.description || '',
+          priceCents,
+          categoryId: category.id,
+          alcoholContent: parseFloat(newDrink.alcohol?.replace('%', '') || '0'),
+          ingredients: newDrink.ingredients || [],
+          isActive: true
+        });
+
+        toast.success('Getränk erfolgreich hinzugefügt');
+        setNewDrink({ name: '', description: '', price: '', alcohol: '', category: '', image: '', featured: false, ingredients: [] });
+        setIsAddDrinkOpen(false);
+        loadDrinks(); // Reload drinks
+      } catch (error) {
+        console.error('Error adding drink:', error);
+        toast.error('Fehler beim Hinzufügen des Getränks: ' + ApiUtils.handleApiError(error));
+      }
+    }
+  };
+
+  const handleEditDrink = (drink: AdminDrink) => {
     setEditingDrink(drink);
     setIsEditDrinkOpen(true);
   };
 
-  const handleUpdateDrink = () => {
+  const handleUpdateDrink = async () => {
     if (editingDrink) {
-      setDrinks(drinks.map(d => d.id === editingDrink.id ? editingDrink : d));
-      setEditingDrink(null);
-      setIsEditDrinkOpen(false);
+      try {
+        const category = categories.find(c => c.name === editingDrink.category);
+        if (!category) {
+          toast.error('Kategorie nicht gefunden');
+          return;
+        }
+
+        const priceCents = Math.round(parseFloat(editingDrink.price.replace(/[^\d.,]/g, '').replace(',', '.')) * 100);
+        
+        await api.updateDrink(editingDrink.id, {
+          name: editingDrink.name,
+          description: editingDrink.description,
+          priceCents,
+          categoryId: category.id,
+          alcoholPercentage: editingDrink.alcohol,
+          active: editingDrink.active
+        });
+
+        toast.success('Getränk erfolgreich aktualisiert');
+        setEditingDrink(null);
+        setIsEditDrinkOpen(false);
+        loadDrinks(); // Reload drinks
+      } catch (error) {
+        console.error('Error updating drink:', error);
+        toast.error('Fehler beim Aktualisieren des Getränks: ' + ApiUtils.handleApiError(error));
+      }
     }
   };
 
-  const handleDeleteDrink = (id: number) => {
-    setDrinks(drinks.filter(d => d.id !== id));
+  const handleDeleteDrink = async (id: string) => {
+    try {
+      await api.deleteDrink(id);
+      toast.success('Getränk erfolgreich gelöscht');
+      loadDrinks(); // Reload drinks
+    } catch (error) {
+      console.error('Error deleting drink:', error);
+      toast.error('Fehler beim Löschen des Getränks: ' + ApiUtils.handleApiError(error));
+    }
   };
 
   // CRUD Functions for Categories
-  const handleAddCategory = () => {
-    if (newCategory.name && newCategory.icon) {
-      const category: Category = {
-        id: Math.max(...categories.map(c => c.id)) + 1,
-        name: newCategory.name!,
-        icon: newCategory.icon!,
-        description: newCategory.description || '',
-        count: 0
-      };
-      setCategories([...categories, category]);
-      setNewCategory({ name: '', icon: '', description: '' });
-      setIsAddCategoryOpen(false);
+  const handleAddCategory = async () => {
+    if (newCategory.name) {
+      try {
+        await api.createCategory({
+          slug: ApiUtils.createSlug(newCategory.name!),
+          name: newCategory.name!,
+          description: newCategory.description || ''
+        });
+
+        toast.success('Kategorie erfolgreich hinzugefügt');
+        setNewCategory({ name: '', description: '' });
+        setIsAddCategoryOpen(false);
+        loadCategories(); // Reload categories
+      } catch (error) {
+        console.error('Error adding category:', error);
+        toast.error('Fehler beim Hinzufügen der Kategorie: ' + ApiUtils.handleApiError(error));
+      }
     }
   };
 
-  const handleDeleteCategory = (id: number) => {
-    setCategories(categories.filter(c => c.id !== id));
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await api.deleteCategory(id);
+      toast.success('Kategorie erfolgreich gelöscht');
+      loadCategories(); // Reload categories
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Fehler beim Löschen der Kategorie: ' + ApiUtils.handleApiError(error));
+    }
   };
 
   // CRUD Functions for Locations
-  const handleAddLocation = () => {
+  const handleAddLocation = async () => {
     if (newLocation.name && newLocation.address && newLocation.city) {
-      const location: Location = {
-        id: Math.max(...locations.map(l => l.id)) + 1,
-        name: newLocation.name!,
-        address: newLocation.address!,
-        city: newLocation.city!,
-        eventType: newLocation.eventType || 'Event',
-        date: newLocation.date || new Date().toISOString().split('T')[0],
-        status: newLocation.status as 'upcoming' | 'active' | 'completed' || 'upcoming'
-      };
-      setLocations([...locations, location]);
-      setNewLocation({ name: '', address: '', city: '', eventType: '', date: '', status: 'upcoming' });
-      setIsAddLocationOpen(false);
+      try {
+        await api.createLocation({
+          name: newLocation.name!,
+          address: newLocation.address!,
+          city: newLocation.city!,
+          date: newLocation.date || new Date().toISOString().split('T')[0],
+          isCurrent: newLocation.isCurrent || false
+        });
+
+        toast.success('Standort erfolgreich hinzugefügt');
+        setNewLocation({ name: '', address: '', city: '', date: '', isCurrent: false });
+        setIsAddLocationOpen(false);
+        loadLocations(); // Reload locations
+      } catch (error) {
+        console.error('Error adding location:', error);
+        toast.error('Fehler beim Hinzufügen des Standorts: ' + ApiUtils.handleApiError(error));
+      }
     }
   };
 
-  const handleDeleteLocation = (id: number) => {
-    setLocations(locations.filter(l => l.id !== id));
+  const handleDeleteLocation = async (id: string) => {
+    try {
+      await api.deleteLocation(id);
+      toast.success('Standort erfolgreich gelöscht');
+      loadLocations(); // Reload locations
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      toast.error('Fehler beim Löschen des Standorts: ' + ApiUtils.handleApiError(error));
+    }
+  };
+
+  const handleSetCurrentLocation = async (id: string) => {
+    try {
+      await api.setCurrentLocation(id);
+      toast.success('Aktueller Standort gesetzt');
+      loadLocations(); // Reload locations
+    } catch (error) {
+      console.error('Error setting current location:', error);
+      toast.error('Fehler beim Setzen des aktuellen Standorts: ' + ApiUtils.handleApiError(error));
+    }
   };
 
   // Ingredient handling functions
@@ -317,116 +474,129 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Analytics Overview Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <Eye className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Seitenaufrufe</p>
-                        <p className="text-2xl font-bold">{analyticsData.pageViews.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <Users className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Unique Visitors</p>
-                        <p className="text-2xl font-bold">{analyticsData.uniqueVisitors.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <TrendingUp className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Bounce Rate</p>
-                        <p className="text-2xl font-bold">{analyticsData.bounceRate}%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <MousePointer className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Mobile Traffic</p>
-                        <p className="text-2xl font-bold">{analyticsData.mobileTraffic}%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* API Status & Tests */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <ApiStatus />
-                <ApiTest />
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <EnvDebug />
-                <NetworkTest />
-              </div>
-
-              {/* Detailed Analytics */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <BarChart3 className="h-5 w-5" />
-                      <span>Top Seiten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analyticsData.topPages.map((page, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-sm">{page.page}</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-20 bg-secondary rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full" 
-                                style={{ width: `${(page.views / analyticsData.topPages[0].views) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">{page.views}</span>
+              {loadingAnalytics ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-lg">Lade Analytics...</span>
+                </div>
+              ) : analyticsData ? (
+                <>
+                  {/* Analytics Overview Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4">
+                          <Eye className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Seitenaufrufe</p>
+                            <p className="text-2xl font-bold">{analyticsData.pageViews.toLocaleString()}</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
 
-                <Card className="mystical-card wood-texture border-primary/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Wine className="h-5 w-5" />
-                      <span>Beliebte Suchbegriffe</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analyticsData.drinkSearches.map((search, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-sm">{search.term}</span>
-                          <Badge variant="outline">{search.count}</Badge>
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4">
+                          <Users className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Unique Visitors</p>
+                            <p className="text-2xl font-bold">{analyticsData.uniqueVisitors.toLocaleString()}</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4">
+                          <TrendingUp className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Bounce Rate</p>
+                            <p className="text-2xl font-bold">{analyticsData.bounceRate}%</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4">
+                          <MousePointer className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Mobile Traffic</p>
+                            <p className="text-2xl font-bold">{analyticsData.mobileTraffic}%</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* API Status & Tests */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <ApiStatus />
+                    <ApiTest />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <EnvDebug />
+                    <NetworkTest />
+                  </div>
+
+                  {/* Detailed Analytics */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <BarChart3 className="h-5 w-5" />
+                          <span>Top Seiten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {analyticsData.topPages.map((page, index) => (
+                            <div key={index} className="flex justify-between items-center">
+                              <span className="text-sm">{page.page}</span>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-20 bg-secondary rounded-full h-2">
+                                  <div 
+                                    className="bg-primary h-2 rounded-full" 
+                                    style={{ width: `${(page.views / analyticsData.topPages[0].views) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">{page.views}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="mystical-card wood-texture border-primary/20">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Wine className="h-5 w-5" />
+                          <span>Beliebte Suchbegriffe</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {analyticsData.drinkSearches.map((search, index) => (
+                            <div key={index} className="flex justify-between items-center">
+                              <span className="text-sm">{search.term}</span>
+                              <Badge variant="outline">{search.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Keine Analytics-Daten verfügbar</p>
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 
@@ -468,12 +638,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                       />
                       <div className="grid grid-cols-2 gap-4">
                         <Input
-                          placeholder="Preis (z.B. 12.50€)"
+                          placeholder="Preis (z.B. 12.50)"
                           value={newDrink.price || ''}
                           onChange={(e) => setNewDrink({ ...newDrink, price: e.target.value })}
                         />
                         <Input
-                          placeholder="Alkoholgehalt (z.B. 18%)"
+                          placeholder="Alkoholgehalt (z.B. 18)"
                           value={newDrink.alcohol || ''}
                           onChange={(e) => setNewDrink({ ...newDrink, alcohol: e.target.value })}
                         />
@@ -488,11 +658,6 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                           ))}
                         </SelectContent>
                       </Select>
-                      <Input
-                        placeholder="Bild URL"
-                        value={newDrink.image || ''}
-                        onChange={(e) => setNewDrink({ ...newDrink, image: e.target.value })}
-                      />
                       
                       {/* Ingredients Management */}
                       <div className="space-y-2">
@@ -558,193 +723,80 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                     </div>
                   </DialogContent>
                 </Dialog>
-
-                {/* Edit Drink Dialog */}
-                <Dialog open={isEditDrinkOpen} onOpenChange={setIsEditDrinkOpen}>
-                  <DialogContent className="mystical-card wood-texture max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Getränk bearbeiten</DialogTitle>
-                      <DialogDescription>
-                        Bearbeiten Sie die Details des Getränks.
-                      </DialogDescription>
-                    </DialogHeader>
-                    {editingDrink && (
-                      <div className="space-y-4">
-                        <Input
-                          placeholder="Name"
-                          value={editingDrink.name}
-                          onChange={(e) => setEditingDrink({ ...editingDrink, name: e.target.value })}
-                        />
-                        <Textarea
-                          placeholder="Beschreibung"
-                          value={editingDrink.description}
-                          onChange={(e) => setEditingDrink({ ...editingDrink, description: e.target.value })}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <Input
-                            placeholder="Preis (z.B. 12.50€)"
-                            value={editingDrink.price}
-                            onChange={(e) => setEditingDrink({ ...editingDrink, price: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Alkoholgehalt (z.B. 18%)"
-                            value={editingDrink.alcohol}
-                            onChange={(e) => setEditingDrink({ ...editingDrink, alcohol: e.target.value })}
-                          />
-                        </div>
-                        <Select value={editingDrink.category} onValueChange={(value) => setEditingDrink({ ...editingDrink, category: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Kategorie wählen" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          placeholder="Bild URL"
-                          value={editingDrink.image}
-                          onChange={(e) => setEditingDrink({ ...editingDrink, image: e.target.value })}
-                        />
-                        
-                        {/* Edit Ingredients Management */}
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Zutaten</label>
-                          <div className="flex space-x-2">
-                            <Input
-                              placeholder="Zutat hinzufügen"
-                              value={ingredientInput}
-                              onChange={(e) => setIngredientInput(e.target.value)}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  addIngredient(editingDrink.ingredients, (ingredients) => 
-                                    setEditingDrink({ ...editingDrink, ingredients })
-                                  );
-                                }
-                              }}
-                            />
-                            <Button 
-                              type="button"
-                              variant="outline" 
-                              onClick={() => addIngredient(editingDrink.ingredients, (ingredients) => 
-                                setEditingDrink({ ...editingDrink, ingredients })
-                              )}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {editingDrink.ingredients.map((ingredient, index) => (
-                              <Badge key={index} variant="secondary" className="flex items-center space-x-1">
-                                <span>{ingredient}</span>
-                                <X 
-                                  className="h-3 w-3 cursor-pointer" 
-                                  onClick={() => removeIngredient(ingredient, editingDrink.ingredients, (ingredients) => 
-                                    setEditingDrink({ ...editingDrink, ingredients })
-                                  )}
-                                />
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="edit-featured"
-                            checked={editingDrink.featured}
-                            onCheckedChange={(checked) => setEditingDrink({ ...editingDrink, featured: !!checked })}
-                          />
-                          <label htmlFor="edit-featured" className="text-sm font-medium">Als Highlight anzeigen</label>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button onClick={handleUpdateDrink} className="mystical-glow">
-                            <Save className="h-4 w-4 mr-2" />
-                            Aktualisieren
-                          </Button>
-                          <Button variant="outline" onClick={() => setIsEditDrinkOpen(false)}>
-                            <X className="h-4 w-4 mr-2" />
-                            Abbrechen
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </DialogContent>
-                </Dialog>
               </div>
 
-              <Card className="mystical-card wood-texture border-primary/20">
-                <CardContent className="p-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Bild</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Kategorie</TableHead>
-                        <TableHead>Preis</TableHead>
-                        <TableHead>Alkohol</TableHead>
-                        <TableHead>Zutaten</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {drinks.map((drink) => (
-                        <TableRow key={drink.id}>
-                          <TableCell>
-                            <ImageWithFallback
-                              src={drink.image}
-                              alt={drink.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{drink.name}</TableCell>
-                          <TableCell>{drink.category}</TableCell>
-                          <TableCell>{drink.price}</TableCell>
-                          <TableCell>{drink.alcohol}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {drink.ingredients.slice(0, 2).map((ingredient, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {ingredient}
-                                </Badge>
-                              ))}
-                              {drink.ingredients.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{drink.ingredients.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {drink.featured && <Badge className="bg-primary">Highlight</Badge>}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditDrink(drink)}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteDrink(drink.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+              {/* Drinks Table */}
+              {loadingDrinks ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-lg">Lade Getränke...</span>
+                </div>
+              ) : (
+                <Card className="mystical-card wood-texture border-primary/20">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Kategorie</TableHead>
+                          <TableHead>Preis</TableHead>
+                          <TableHead>Alkohol</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Aktionen</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {drinks.map((drink) => (
+                          <TableRow key={drink.id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-3">
+                                <ImageWithFallback
+                                  src={drink.image}
+                                  alt={drink.name}
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                                <div>
+                                  <div className="font-medium">{drink.name}</div>
+                                  <div className="text-sm text-muted-foreground">{drink.description.substring(0, 50)}...</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{drink.category}</TableCell>
+                            <TableCell>{drink.price}</TableCell>
+                            <TableCell>{drink.alcohol}</TableCell>
+                            <TableCell>
+                              <Badge variant={drink.active ? "default" : "secondary"}>
+                                {drink.active ? "Aktiv" : "Inaktiv"}
+                              </Badge>
+                              {drink.featured && (
+                                <Badge variant="outline" className="ml-2">Featured</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditDrink(drink)}
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteDrink(drink.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           </TabsContent>
 
@@ -757,6 +809,7 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Kategorien verwalten</h2>
+                
                 <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                   <DialogTrigger asChild>
                     <Button className="mystical-glow">
@@ -767,20 +820,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                   <DialogContent className="mystical-card wood-texture">
                     <DialogHeader>
                       <DialogTitle>Neue Kategorie hinzufügen</DialogTitle>
-                      <DialogDescription>
-                        Erstellen Sie eine neue Kategorie für Getränke.
-                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Input
                         placeholder="Name"
                         value={newCategory.name || ''}
                         onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Icon (Emoji)"
-                        value={newCategory.icon || ''}
-                        onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
                       />
                       <Textarea
                         placeholder="Beschreibung"
@@ -802,33 +847,38 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                 </Dialog>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categories.map((category) => (
-                  <motion.div
-                    key={category.id}
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <Card className="mystical-card wood-texture border-primary/20 relative">
-                      <CardContent className="p-6 text-center">
-                        <div className="text-4xl mb-4">{category.icon}</div>
-                        <h3 className="text-lg font-bold mb-2">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{category.description}</p>
-                        <Badge variant="outline">{category.count} Getränke</Badge>
-                        <div className="absolute top-2 right-2">
+              {loadingCategories ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-lg">Lade Kategorien...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {categories.map((category) => (
+                    <Card key={category.id} className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg">{category.name}</h3>
+                            <p className="text-sm text-muted-foreground">{category.description}</p>
+                          </div>
                           <Button
+                            variant="outline"
                             size="sm"
-                            variant="destructive"
                             onClick={() => handleDeleteCategory(category.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <Tag className="h-4 w-4 text-primary" />
+                          <span className="text-sm">{category.count} Getränke</span>
+                        </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 
@@ -841,25 +891,21 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Standorte verwalten</h2>
+                
                 <Dialog open={isAddLocationOpen} onOpenChange={setIsAddLocationOpen}>
                   <DialogTrigger asChild>
-                  <DialogTrigger asChild>
-                    <Button className="mystical-glow" asChild={false}>
+                    <Button className="mystical-glow">
                       <Plus className="h-4 w-4 mr-2" />
                       Standort hinzufügen
                     </Button>
                   </DialogTrigger>
-                  </DialogTrigger>
                   <DialogContent className="mystical-card wood-texture">
                     <DialogHeader>
                       <DialogTitle>Neuen Standort hinzufügen</DialogTitle>
-                      <DialogDescription>
-                        Fügen Sie einen neuen Event-Standort oder Veranstaltungsort hinzu.
-                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Input
-                        placeholder="Event/Standort Name"
+                        placeholder="Name"
                         value={newLocation.name || ''}
                         onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
                       />
@@ -874,25 +920,19 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })}
                       />
                       <Input
-                        placeholder="Event-Typ"
-                        value={newLocation.eventType || ''}
-                        onChange={(e) => setNewLocation({ ...newLocation, eventType: e.target.value })}
-                      />
-                      <Input
                         type="date"
+                        placeholder="Datum"
                         value={newLocation.date || ''}
                         onChange={(e) => setNewLocation({ ...newLocation, date: e.target.value })}
                       />
-                      <Select onValueChange={(value) => setNewLocation({ ...newLocation, status: value as any })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Status wählen" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="upcoming">Geplant</SelectItem>
-                          <SelectItem value="active">Aktiv</SelectItem>
-                          <SelectItem value="completed">Abgeschlossen</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="current"
+                          checked={newLocation.isCurrent || false}
+                          onCheckedChange={(checked) => setNewLocation({ ...newLocation, isCurrent: !!checked })}
+                        />
+                        <label htmlFor="current" className="text-sm font-medium">Als aktueller Standort markieren</label>
+                      </div>
                       <div className="flex space-x-2">
                         <Button onClick={handleAddLocation} className="mystical-glow">
                           <Save className="h-4 w-4 mr-2" />
@@ -908,56 +948,57 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                 </Dialog>
               </div>
 
-              <Card className="mystical-card wood-texture border-primary/20">
-                <CardContent className="p-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Event/Standort</TableHead>
-                        <TableHead>Adresse</TableHead>
-                        <TableHead>Stadt</TableHead>
-                        <TableHead>Event-Typ</TableHead>
-                        <TableHead>Datum</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {locations.map((location) => (
-                        <TableRow key={location.id}>
-                          <TableCell className="font-medium">{location.name}</TableCell>
-                          <TableCell>{location.address}</TableCell>
-                          <TableCell>{location.city}</TableCell>
-                          <TableCell>{location.eventType}</TableCell>
-                          <TableCell>{new Date(location.date).toLocaleDateString('de-DE')}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              className={
-                                location.status === 'active' ? 'bg-primary' :
-                                location.status === 'upcoming' ? 'bg-secondary' :
-                                'bg-muted'
-                              }
-                            >
-                              {location.status === 'active' ? 'Aktiv' :
-                               location.status === 'upcoming' ? 'Geplant' :
-                               'Abgeschlossen'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
+              {loadingLocations ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-lg">Lade Standorte...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {locations.map((location) => (
+                    <Card key={location.id} className="mystical-card wood-texture border-primary/20">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg">{location.name}</h3>
+                            <p className="text-sm text-muted-foreground">{location.address}</p>
+                            <p className="text-sm text-muted-foreground">{location.city}</p>
+                          </div>
+                          <div className="flex space-x-2">
+                            {!location.isCurrent && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSetCurrentLocation(location.id)}
+                              >
+                                <MapPin className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
+                              variant="outline"
                               size="sm"
-                              variant="destructive"
                               onClick={() => handleDeleteLocation(location.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span className="text-sm">{ApiUtils.formatDate(location.date)}</span>
+                          </div>
+                          {location.isCurrent && (
+                            <Badge className="bg-primary/20 text-primary border-primary/30">
+                              Aktuell
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </TabsContent>
         </Tabs>

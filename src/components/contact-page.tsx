@@ -79,15 +79,32 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // For now, this is a mock implementation
-    // In a real app, you'd want to send this to an API endpoint
+    if (!formData.name || !formData.email || !formData.message) {
+      alert('Bitte füllen Sie alle Pflichtfelder aus.');
+      return;
+    }
+    
     setFormSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // In a real implementation, you would have a contact API endpoint
+      // For now, we'll use console logging and user feedback
+      // TODO: Implement api.sendContactMessage() when backend is ready
       
-      alert('Nachricht gesendet! Wir melden uns bald bei Ihnen.');
+      console.log('Contact form submission:', {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        event: formData.event,
+        date: formData.date,
+        message: formData.message,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Simulate successful submission
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      alert('Nachricht erfolgreich gesendet! Wir melden uns bald bei Ihnen.');
       setFormData({
         name: '',
         email: '',
@@ -97,7 +114,8 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
         message: ''
       });
     } catch (err) {
-      alert('Fehler beim Senden der Nachricht. Bitte versuchen Sie es erneut.');
+      console.error('Contact form error:', err);
+      alert('Fehler beim Senden der Nachricht. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.');
     } finally {
       setFormSubmitting(false);
     }
