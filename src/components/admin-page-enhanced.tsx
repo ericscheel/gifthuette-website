@@ -1,28 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Checkbox } from './ui/checkbox';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { MysticalEffects } from './mystical-effects';
-import { ApiStatus } from './api-status';
-import { ApiTest } from './api-test';
-import { EnvDebug } from './env-debug';
-import { getEnvVar  } from '../utils/env';
-import { NetworkTest } from './network-test';
-import { toast } from 'sonner@2.0.3';
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Save, 
+import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import { Checkbox } from "./ui/checkbox";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { MysticalEffects } from "./mystical-effects";
+import { ApiStatus } from "./api-status";
+import { ApiTest } from "./api-test";
+import { EnvDebug } from "./env-debug";
+import { getEnvVar } from "../utils/env";
+import { NetworkTest } from "./network-test";
+import { toast } from "sonner@2.0.3";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Save,
   X,
   TrendingUp,
   Users,
@@ -35,18 +55,18 @@ import {
   Calendar,
   DollarSign,
   Tag,
-  Loader2
-} from 'lucide-react';
+  Loader2,
+} from "lucide-react";
 
 // Import API services and types
-import { 
-  api, 
-  type Drink, 
-  type Category, 
-  type Location, 
-  type Highlight, 
-  ApiUtils 
-} from '../services/api';
+import {
+  api,
+  type Drink,
+  type Category,
+  type Location,
+  type Highlight,
+  ApiUtils,
+} from "../services/api";
 
 interface AdminPageProps {
   setCurrentPage: (page: string) => void;
@@ -93,19 +113,25 @@ interface AnalyticsData {
   uniqueVisitors: number;
   bounceRate: number;
   avgSessionDuration: string;
-  topPages: { page: string; views: number; }[];
-  drinkSearches: { term: string; count: number; }[];
+  topPages: { page: string; views: number }[];
+  drinkSearches: { term: string; count: number }[];
   conversionRate: number;
   mobileTraffic: number;
 }
 
-export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: AdminPageProps) {
+export function AdminPageEnhanced({
+  setCurrentPage,
+  currentUser,
+  onLogout,
+}: AdminPageProps) {
   // State for data
   const [drinks, setDrinks] = useState<AdminDrink[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [locations, setLocations] = useState<AdminLocation[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
+    null
+  );
 
   // Loading states
   const [loadingDrinks, setLoadingDrinks] = useState(false);
@@ -118,57 +144,62 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const [isEditDrinkOpen, setIsEditDrinkOpen] = useState(false);
   const [editingDrink, setEditingDrink] = useState<AdminDrink | null>(null);
   const [newDrink, setNewDrink] = useState<Partial<AdminDrink>>({
-    name: '',
-    description: '',
-    price: '',
-    alcohol: '',
-    category: '',
-    image: '',
+    name: "",
+    description: "",
+    price: "",
+    alcohol: "",
+    category: "",
+    image: "",
     featured: false,
-    ingredients: []
+    ingredients: [],
   });
 
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newCategory, setNewCategory] = useState<Partial<AdminCategory>>({
-    name: '',
-    description: ''
+    name: "",
+    description: "",
   });
 
   const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
   const [newLocation, setNewLocation] = useState<Partial<AdminLocation>>({
-    name: '',
-    address: '',
-    city: '',
-    date: '',
-    isCurrent: false
+    name: "",
+    address: "",
+    city: "",
+    date: "",
+    isCurrent: false,
   });
 
-  const [ingredientInput, setIngredientInput] = useState('');
+  const [ingredientInput, setIngredientInput] = useState("");
 
   // Data loading functions
   const loadDrinks = async () => {
     setLoadingDrinks(true);
     try {
       const response = await api.getDrinks({ page: 1, pageSize: 100 });
-      const adminDrinks: AdminDrink[] = response.drinks.map(drink => ({
+      const adminDrinks: AdminDrink[] = response.drinks.map((drink) => ({
         id: drink.id,
         name: drink.name,
         description: drink.description,
         price: ApiUtils.formatPrice(drink.priceCents),
-        alcohol: drink.alcoholPercentage || '0%',
-        category: drink.category?.name || '',
-        image: drink.media[0]?.url || '',
-        featured: drink.tags?.some(tag => tag.tag.name.toLowerCase() === 'featured') || false,
-        ingredients: drink.ingredients.map(ing => ing.ingredient.name),
+        alcohol: drink.alcoholPercentage || "0%",
+        category: drink.category?.name || "",
+        image: drink.media[0]?.url || "",
+        featured:
+          drink.tags?.some(
+            (tag) => tag.tag.name.toLowerCase() === "featured"
+          ) || false,
+        ingredients: drink.ingredients.map((ing) => ing.ingredient.name),
         slug: drink.slug,
         priceCents: drink.priceCents,
         categoryId: drink.categoryId,
-        active: drink.active
+        active: drink.active,
       }));
       setDrinks(adminDrinks);
     } catch (error) {
-      console.error('Error loading drinks:', error);
-      toast.error('Fehler beim Laden der Getränke: ' + ApiUtils.handleApiError(error));
+      console.error("Error loading drinks:", error);
+      toast.error(
+        "Fehler beim Laden der Getränke: " + ApiUtils.handleApiError(error)
+      );
     } finally {
       setLoadingDrinks(false);
     }
@@ -178,17 +209,19 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
     setLoadingCategories(true);
     try {
       const apiCategories = await api.getCategories(true);
-      const adminCategories: AdminCategory[] = apiCategories.map(cat => ({
+      const adminCategories: AdminCategory[] = apiCategories.map((cat) => ({
         id: cat.id,
         name: cat.name,
         slug: cat.slug,
-        description: cat.description || '',
-        count: cat.drinks?.length || 0
+        description: cat.description || "",
+        count: cat.drinks?.length || 0,
       }));
       setCategories(adminCategories);
     } catch (error) {
-      console.error('Error loading categories:', error);
-      toast.error('Fehler beim Laden der Kategorien: ' + ApiUtils.handleApiError(error));
+      console.error("Error loading categories:", error);
+      toast.error(
+        "Fehler beim Laden der Kategorien: " + ApiUtils.handleApiError(error)
+      );
     } finally {
       setLoadingCategories(false);
     }
@@ -198,18 +231,20 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
     setLoadingLocations(true);
     try {
       const apiLocations = await api.getLocations();
-      const adminLocations: AdminLocation[] = apiLocations.map(loc => ({
+      const adminLocations: AdminLocation[] = apiLocations.map((loc) => ({
         id: loc.id,
         name: loc.name,
         address: loc.address,
         city: loc.city,
         date: loc.date,
-        isCurrent: loc.isCurrent
+        isCurrent: loc.isCurrent,
       }));
       setLocations(adminLocations);
     } catch (error) {
-      console.error('Error loading locations:', error);
-      toast.error('Fehler beim Laden der Standorte: ' + ApiUtils.handleApiError(error));
+      console.error("Error loading locations:", error);
+      toast.error(
+        "Fehler beim Laden der Standorte: " + ApiUtils.handleApiError(error)
+      );
     } finally {
       setLoadingLocations(false);
     }
@@ -229,20 +264,22 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
           { page: "/drinks", views: 5840 },
           { page: "/", views: 4320 },
           { page: "/contact", views: 2180 },
-          { page: "/search", views: 1650 }
+          { page: "/search", views: 1650 },
         ],
         drinkSearches: [
           { term: "Cocktail", count: 890 },
           { term: "Signature", count: 650 },
           { term: "Alkoholfrei", count: 420 },
-          { term: "Shot", count: 380 }
+          { term: "Shot", count: 380 },
         ],
         conversionRate: 12.5,
-        mobileTraffic: 67.8
+        mobileTraffic: 67.8,
       });
     } catch (error) {
-      console.error('Error loading analytics:', error);
-      toast.error('Fehler beim Laden der Analytics: ' + ApiUtils.handleApiError(error));
+      console.error("Error loading analytics:", error);
+      toast.error(
+        "Fehler beim Laden der Analytics: " + ApiUtils.handleApiError(error)
+      );
     } finally {
       setLoadingAnalytics(false);
     }
@@ -260,32 +297,47 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const handleAddDrink = async () => {
     if (newDrink.name && newDrink.price && newDrink.category) {
       try {
-        const category = categories.find(c => c.name === newDrink.category);
+        const category = categories.find((c) => c.name === newDrink.category);
         if (!category) {
-          toast.error('Kategorie nicht gefunden');
+          toast.error("Kategorie nicht gefunden");
           return;
         }
 
-        const priceCents = Math.round(parseFloat(newDrink.price.replace(/[^\d.,]/g, '').replace(',', '.')) * 100);
-        
+        const priceCents = Math.round(
+          parseFloat(newDrink.price.replace(/[^\d.,]/g, "").replace(",", ".")) *
+            100
+        );
+
         await api.createDrink({
           slug: ApiUtils.createSlug(newDrink.name!),
           name: newDrink.name!,
-          description: newDrink.description || '',
+          description: newDrink.description || "",
           priceCents,
           categoryId: category.id,
-          alcoholContent: parseFloat(newDrink.alcohol?.replace('%', '') || '0'),
+          alcoholContent: parseFloat(newDrink.alcohol?.replace("%", "") || "0"),
           ingredients: newDrink.ingredients || [],
-          isActive: true
+          isActive: true,
         });
 
-        toast.success('Getränk erfolgreich hinzugefügt');
-        setNewDrink({ name: '', description: '', price: '', alcohol: '', category: '', image: '', featured: false, ingredients: [] });
+        toast.success("Getränk erfolgreich hinzugefügt");
+        setNewDrink({
+          name: "",
+          description: "",
+          price: "",
+          alcohol: "",
+          category: "",
+          image: "",
+          featured: false,
+          ingredients: [],
+        });
         setIsAddDrinkOpen(false);
         loadDrinks(); // Reload drinks
       } catch (error) {
-        console.error('Error adding drink:', error);
-        toast.error('Fehler beim Hinzufügen des Getränks: ' + ApiUtils.handleApiError(error));
+        console.error("Error adding drink:", error);
+        toast.error(
+          "Fehler beim Hinzufügen des Getränks: " +
+            ApiUtils.handleApiError(error)
+        );
       }
     }
   };
@@ -298,30 +350,39 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const handleUpdateDrink = async () => {
     if (editingDrink) {
       try {
-        const category = categories.find(c => c.name === editingDrink.category);
+        const category = categories.find(
+          (c) => c.name === editingDrink.category
+        );
         if (!category) {
-          toast.error('Kategorie nicht gefunden');
+          toast.error("Kategorie nicht gefunden");
           return;
         }
 
-        const priceCents = Math.round(parseFloat(editingDrink.price.replace(/[^\d.,]/g, '').replace(',', '.')) * 100);
-        
+        const priceCents = Math.round(
+          parseFloat(
+            editingDrink.price.replace(/[^\d.,]/g, "").replace(",", ".")
+          ) * 100
+        );
+
         await api.updateDrink(editingDrink.id, {
           name: editingDrink.name,
           description: editingDrink.description,
           priceCents,
           categoryId: category.id,
           alcoholPercentage: editingDrink.alcohol,
-          active: editingDrink.active
+          active: editingDrink.active,
         });
 
-        toast.success('Getränk erfolgreich aktualisiert');
+        toast.success("Getränk erfolgreich aktualisiert");
         setEditingDrink(null);
         setIsEditDrinkOpen(false);
         loadDrinks(); // Reload drinks
       } catch (error) {
-        console.error('Error updating drink:', error);
-        toast.error('Fehler beim Aktualisieren des Getränks: ' + ApiUtils.handleApiError(error));
+        console.error("Error updating drink:", error);
+        toast.error(
+          "Fehler beim Aktualisieren des Getränks: " +
+            ApiUtils.handleApiError(error)
+        );
       }
     }
   };
@@ -329,11 +390,13 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const handleDeleteDrink = async (id: string) => {
     try {
       await api.deleteDrink(id);
-      toast.success('Getränk erfolgreich gelöscht');
+      toast.success("Getränk erfolgreich gelöscht");
       loadDrinks(); // Reload drinks
     } catch (error) {
-      console.error('Error deleting drink:', error);
-      toast.error('Fehler beim Löschen des Getränks: ' + ApiUtils.handleApiError(error));
+      console.error("Error deleting drink:", error);
+      toast.error(
+        "Fehler beim Löschen des Getränks: " + ApiUtils.handleApiError(error)
+      );
     }
   };
 
@@ -344,16 +407,19 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
         await api.createCategory({
           slug: ApiUtils.createSlug(newCategory.name!),
           name: newCategory.name!,
-          description: newCategory.description || ''
+          description: newCategory.description || "",
         });
 
-        toast.success('Kategorie erfolgreich hinzugefügt');
-        setNewCategory({ name: '', description: '' });
+        toast.success("Kategorie erfolgreich hinzugefügt");
+        setNewCategory({ name: "", description: "" });
         setIsAddCategoryOpen(false);
         loadCategories(); // Reload categories
       } catch (error) {
-        console.error('Error adding category:', error);
-        toast.error('Fehler beim Hinzufügen der Kategorie: ' + ApiUtils.handleApiError(error));
+        console.error("Error adding category:", error);
+        toast.error(
+          "Fehler beim Hinzufügen der Kategorie: " +
+            ApiUtils.handleApiError(error)
+        );
       }
     }
   };
@@ -361,11 +427,13 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const handleDeleteCategory = async (id: string) => {
     try {
       await api.deleteCategory(id);
-      toast.success('Kategorie erfolgreich gelöscht');
+      toast.success("Kategorie erfolgreich gelöscht");
       loadCategories(); // Reload categories
     } catch (error) {
-      console.error('Error deleting category:', error);
-      toast.error('Fehler beim Löschen der Kategorie: ' + ApiUtils.handleApiError(error));
+      console.error("Error deleting category:", error);
+      toast.error(
+        "Fehler beim Löschen der Kategorie: " + ApiUtils.handleApiError(error)
+      );
     }
   };
 
@@ -377,17 +445,26 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
           name: newLocation.name!,
           address: newLocation.address!,
           city: newLocation.city!,
-          date: newLocation.date || new Date().toISOString().split('T')[0],
-          isCurrent: newLocation.isCurrent || false
+          date: newLocation.date || new Date().toISOString().split("T")[0],
+          isCurrent: newLocation.isCurrent || false,
         });
 
-        toast.success('Standort erfolgreich hinzugefügt');
-        setNewLocation({ name: '', address: '', city: '', date: '', isCurrent: false });
+        toast.success("Standort erfolgreich hinzugefügt");
+        setNewLocation({
+          name: "",
+          address: "",
+          city: "",
+          date: "",
+          isCurrent: false,
+        });
         setIsAddLocationOpen(false);
         loadLocations(); // Reload locations
       } catch (error) {
-        console.error('Error adding location:', error);
-        toast.error('Fehler beim Hinzufügen des Standorts: ' + ApiUtils.handleApiError(error));
+        console.error("Error adding location:", error);
+        toast.error(
+          "Fehler beim Hinzufügen des Standorts: " +
+            ApiUtils.handleApiError(error)
+        );
       }
     }
   };
@@ -395,35 +472,50 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
   const handleDeleteLocation = async (id: string) => {
     try {
       await api.deleteLocation(id);
-      toast.success('Standort erfolgreich gelöscht');
+      toast.success("Standort erfolgreich gelöscht");
       loadLocations(); // Reload locations
     } catch (error) {
-      console.error('Error deleting location:', error);
-      toast.error('Fehler beim Löschen des Standorts: ' + ApiUtils.handleApiError(error));
+      console.error("Error deleting location:", error);
+      toast.error(
+        "Fehler beim Löschen des Standorts: " + ApiUtils.handleApiError(error)
+      );
     }
   };
 
   const handleSetCurrentLocation = async (id: string) => {
     try {
       await api.setCurrentLocation(id);
-      toast.success('Aktueller Standort gesetzt');
+      toast.success("Aktueller Standort gesetzt");
       loadLocations(); // Reload locations
     } catch (error) {
-      console.error('Error setting current location:', error);
-      toast.error('Fehler beim Setzen des aktuellen Standorts: ' + ApiUtils.handleApiError(error));
+      console.error("Error setting current location:", error);
+      toast.error(
+        "Fehler beim Setzen des aktuellen Standorts: " +
+          ApiUtils.handleApiError(error)
+      );
     }
   };
 
   // Ingredient handling functions
-  const addIngredient = (ingredients: string[], setIngredients: (ingredients: string[]) => void) => {
-    if (ingredientInput.trim() && !ingredients.includes(ingredientInput.trim())) {
+  const addIngredient = (
+    ingredients: string[],
+    setIngredients: (ingredients: string[]) => void
+  ) => {
+    if (
+      ingredientInput.trim() &&
+      !ingredients.includes(ingredientInput.trim())
+    ) {
       setIngredients([...ingredients, ingredientInput.trim()]);
-      setIngredientInput('');
+      setIngredientInput("");
     }
   };
 
-  const removeIngredient = (ingredientToRemove: string, ingredients: string[], setIngredients: (ingredients: string[]) => void) => {
-    setIngredients(ingredients.filter(ing => ing !== ingredientToRemove));
+  const removeIngredient = (
+    ingredientToRemove: string,
+    ingredients: string[],
+    setIngredients: (ingredients: string[]) => void
+  ) => {
+    setIngredients(ingredients.filter((ing) => ing !== ingredientToRemove));
   };
 
   return (
@@ -432,7 +524,7 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
       <section className="relative py-16 px-4 mystical-atmosphere">
         <MysticalEffects intensity="medium" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40" />
-        
+
         <motion.div
           className="relative z-10 max-w-7xl mx-auto text-center"
           initial={{ opacity: 0, y: 30 }}
@@ -449,7 +541,9 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
           {currentUser && (
             <div className="flex items-center justify-center space-x-4 text-lg">
               <span className="text-muted-foreground">Willkommen,</span>
-              <span className="text-primary font-medium">{currentUser.username}</span>
+              <span className="text-primary font-medium">
+                {currentUser.username}
+              </span>
               <Badge className="bg-primary/20 text-primary border-primary/30">
                 {currentUser.role}
               </Badge>
@@ -489,8 +583,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         <div className="flex items-center space-x-4">
                           <Eye className="h-8 w-8 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Seitenaufrufe</p>
-                            <p className="text-2xl font-bold">{analyticsData.pageViews.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Seitenaufrufe
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {analyticsData.pageViews.toLocaleString()}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -501,8 +599,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         <div className="flex items-center space-x-4">
                           <Users className="h-8 w-8 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Unique Visitors</p>
-                            <p className="text-2xl font-bold">{analyticsData.uniqueVisitors.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Unique Visitors
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {analyticsData.uniqueVisitors.toLocaleString()}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -513,8 +615,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         <div className="flex items-center space-x-4">
                           <TrendingUp className="h-8 w-8 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Bounce Rate</p>
-                            <p className="text-2xl font-bold">{analyticsData.bounceRate}%</p>
+                            <p className="text-sm text-muted-foreground">
+                              Bounce Rate
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {analyticsData.bounceRate}%
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -525,8 +631,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         <div className="flex items-center space-x-4">
                           <MousePointer className="h-8 w-8 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Mobile Traffic</p>
-                            <p className="text-2xl font-bold">{analyticsData.mobileTraffic}%</p>
+                            <p className="text-sm text-muted-foreground">
+                              Mobile Traffic
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {analyticsData.mobileTraffic}%
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -538,7 +648,7 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                     <ApiStatus />
                     <ApiTest />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <EnvDebug />
                     <NetworkTest />
@@ -556,16 +666,27 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                       <CardContent>
                         <div className="space-y-4">
                           {analyticsData.topPages.map((page, index) => (
-                            <div key={index} className="flex justify-between items-center">
+                            <div
+                              key={index}
+                              className="flex justify-between items-center"
+                            >
                               <span className="text-sm">{page.page}</span>
                               <div className="flex items-center space-x-2">
                                 <div className="w-20 bg-secondary rounded-full h-2">
-                                  <div 
-                                    className="bg-primary h-2 rounded-full" 
-                                    style={{ width: `${(page.views / analyticsData.topPages[0].views) * 100}%` }}
+                                  <div
+                                    className="bg-primary h-2 rounded-full"
+                                    style={{
+                                      width: `${
+                                        (page.views /
+                                          analyticsData.topPages[0].views) *
+                                        100
+                                      }%`,
+                                    }}
                                   />
                                 </div>
-                                <span className="text-sm font-medium">{page.views}</span>
+                                <span className="text-sm font-medium">
+                                  {page.views}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -583,7 +704,10 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                       <CardContent>
                         <div className="space-y-4">
                           {analyticsData.drinkSearches.map((search, index) => (
-                            <div key={index} className="flex justify-between items-center">
+                            <div
+                              key={index}
+                              className="flex justify-between items-center"
+                            >
                               <span className="text-sm">{search.term}</span>
                               <Badge variant="outline">{search.count}</Badge>
                             </div>
@@ -595,7 +719,9 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                 </>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">Keine Analytics-Daten verfügbar</p>
+                  <p className="text-muted-foreground">
+                    Keine Analytics-Daten verfügbar
+                  </p>
                 </div>
               )}
             </motion.div>
@@ -610,7 +736,7 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Getränke verwalten</h2>
-                
+
                 {/* Add Drink Dialog */}
                 <Dialog open={isAddDrinkOpen} onOpenChange={setIsAddDrinkOpen}>
                   <DialogTrigger asChild>
@@ -619,7 +745,7 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                       Getränk hinzufügen
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="mystical-card wood-texture max-w-2xl">
+                  <DialogContent className="mystical-card wood-texture !top-[20%] !translate-y-[-20%]">
                     <DialogHeader>
                       <DialogTitle>Neues Getränk hinzufügen</DialogTitle>
                       <DialogDescription>
@@ -629,37 +755,57 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                     <div className="space-y-4">
                       <Input
                         placeholder="Name"
-                        value={newDrink.name || ''}
-                        onChange={(e) => setNewDrink({ ...newDrink, name: e.target.value })}
+                        value={newDrink.name || ""}
+                        onChange={(e) =>
+                          setNewDrink({ ...newDrink, name: e.target.value })
+                        }
                       />
                       <Textarea
                         placeholder="Beschreibung"
-                        value={newDrink.description || ''}
-                        onChange={(e) => setNewDrink({ ...newDrink, description: e.target.value })}
+                        value={newDrink.description || ""}
+                        onChange={(e) =>
+                          setNewDrink({
+                            ...newDrink,
+                            description: e.target.value,
+                          })
+                        }
                       />
                       <div className="grid grid-cols-2 gap-4">
                         <Input
                           placeholder="Preis (z.B. 12.50)"
-                          value={newDrink.price || ''}
-                          onChange={(e) => setNewDrink({ ...newDrink, price: e.target.value })}
+                          value={newDrink.price || ""}
+                          onChange={(e) =>
+                            setNewDrink({ ...newDrink, price: e.target.value })
+                          }
                         />
                         <Input
                           placeholder="Alkoholgehalt (z.B. 18)"
-                          value={newDrink.alcohol || ''}
-                          onChange={(e) => setNewDrink({ ...newDrink, alcohol: e.target.value })}
+                          value={newDrink.alcohol || ""}
+                          onChange={(e) =>
+                            setNewDrink({
+                              ...newDrink,
+                              alcohol: e.target.value,
+                            })
+                          }
                         />
                       </div>
-                      <Select onValueChange={(value) => setNewDrink({ ...newDrink, category: value })}>
+                      <Select
+                        onValueChange={(value) =>
+                          setNewDrink({ ...newDrink, category: value })
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Kategorie wählen" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      
+
                       {/* Ingredients Management */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Zutaten</label>
@@ -669,54 +815,87 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                             value={ingredientInput}
                             onChange={(e) => setIngredientInput(e.target.value)}
                             onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
+                              if (e.key === "Enter") {
                                 e.preventDefault();
-                                addIngredient(newDrink.ingredients || [], (ingredients) => 
-                                  setNewDrink({ ...newDrink, ingredients })
+                                addIngredient(
+                                  newDrink.ingredients || [],
+                                  (ingredients) =>
+                                    setNewDrink({ ...newDrink, ingredients })
                                 );
                               }
                             }}
                           />
-                          <Button 
+                          <Button
                             type="button"
-                            variant="outline" 
-                            onClick={() => addIngredient(newDrink.ingredients || [], (ingredients) => 
-                              setNewDrink({ ...newDrink, ingredients })
-                            )}
+                            variant="outline"
+                            onClick={() =>
+                              addIngredient(
+                                newDrink.ingredients || [],
+                                (ingredients) =>
+                                  setNewDrink({ ...newDrink, ingredients })
+                              )
+                            }
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {(newDrink.ingredients || []).map((ingredient, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center space-x-1">
-                              <span>{ingredient}</span>
-                              <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => removeIngredient(ingredient, newDrink.ingredients || [], (ingredients) => 
-                                  setNewDrink({ ...newDrink, ingredients })
-                                )}
-                              />
-                            </Badge>
-                          ))}
+                          {(newDrink.ingredients || []).map(
+                            (ingredient, index) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="flex items-center space-x-1"
+                              >
+                                <span>{ingredient}</span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer"
+                                  onClick={() =>
+                                    removeIngredient(
+                                      ingredient,
+                                      newDrink.ingredients || [],
+                                      (ingredients) =>
+                                        setNewDrink({
+                                          ...newDrink,
+                                          ingredients,
+                                        })
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            )
+                          )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="featured"
                           checked={newDrink.featured || false}
-                          onCheckedChange={(checked) => setNewDrink({ ...newDrink, featured: !!checked })}
+                          onCheckedChange={(checked) =>
+                            setNewDrink({ ...newDrink, featured: !!checked })
+                          }
                         />
-                        <label htmlFor="featured" className="text-sm font-medium">Als Highlight anzeigen</label>
+                        <label
+                          htmlFor="featured"
+                          className="text-sm font-medium"
+                        >
+                          Als Highlight anzeigen
+                        </label>
                       </div>
-                      
+
                       <div className="flex space-x-2">
-                        <Button onClick={handleAddDrink} className="mystical-glow">
+                        <Button
+                          onClick={handleAddDrink}
+                          className="mystical-glow"
+                        >
                           <Save className="h-4 w-4 mr-2" />
                           Speichern
                         </Button>
-                        <Button variant="outline" onClick={() => setIsAddDrinkOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddDrinkOpen(false)}
+                        >
                           <X className="h-4 w-4 mr-2" />
                           Abbrechen
                         </Button>
@@ -757,8 +936,12 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                                   className="w-12 h-12 rounded-lg object-cover"
                                 />
                                 <div>
-                                  <div className="font-medium">{drink.name}</div>
-                                  <div className="text-sm text-muted-foreground">{drink.description.substring(0, 50)}...</div>
+                                  <div className="font-medium">
+                                    {drink.name}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {drink.description.substring(0, 50)}...
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
@@ -766,11 +949,15 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                             <TableCell>{drink.price}</TableCell>
                             <TableCell>{drink.alcohol}</TableCell>
                             <TableCell>
-                              <Badge variant={drink.active ? "default" : "secondary"}>
+                              <Badge
+                                variant={drink.active ? "default" : "secondary"}
+                              >
                                 {drink.active ? "Aktiv" : "Inaktiv"}
                               </Badge>
                               {drink.featured && (
-                                <Badge variant="outline" className="ml-2">Featured</Badge>
+                                <Badge variant="outline" className="ml-2">
+                                  Featured
+                                </Badge>
                               )}
                             </TableCell>
                             <TableCell>
@@ -810,35 +997,54 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Kategorien verwalten</h2>
-                
-                <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+
+                <Dialog
+                  open={isAddCategoryOpen}
+                  onOpenChange={setIsAddCategoryOpen}
+                >
                   <DialogTrigger asChild>
                     <Button className="mystical-glow">
                       <Plus className="h-4 w-4 mr-2" />
                       Kategorie hinzufügen
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="mystical-card wood-texture">
+                  <DialogContent className="mystical-card wood-texture !top-[20%] !translate-y-[-20%]">
                     <DialogHeader>
                       <DialogTitle>Neue Kategorie hinzufügen</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Input
                         placeholder="Name"
-                        value={newCategory.name || ''}
-                        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                        value={newCategory.name || ""}
+                        onChange={(e) =>
+                          setNewCategory({
+                            ...newCategory,
+                            name: e.target.value,
+                          })
+                        }
                       />
                       <Textarea
                         placeholder="Beschreibung"
-                        value={newCategory.description || ''}
-                        onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                        value={newCategory.description || ""}
+                        onChange={(e) =>
+                          setNewCategory({
+                            ...newCategory,
+                            description: e.target.value,
+                          })
+                        }
                       />
                       <div className="flex space-x-2">
-                        <Button onClick={handleAddCategory} className="mystical-glow">
+                        <Button
+                          onClick={handleAddCategory}
+                          className="mystical-glow"
+                        >
                           <Save className="h-4 w-4 mr-2" />
                           Speichern
                         </Button>
-                        <Button variant="outline" onClick={() => setIsAddCategoryOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddCategoryOpen(false)}
+                        >
                           <X className="h-4 w-4 mr-2" />
                           Abbrechen
                         </Button>
@@ -856,12 +1062,19 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {categories.map((category) => (
-                    <Card key={category.id} className="mystical-card wood-texture border-primary/20">
+                    <Card
+                      key={category.id}
+                      className="mystical-card wood-texture border-primary/20"
+                    >
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="font-bold text-lg">{category.name}</h3>
-                            <p className="text-sm text-muted-foreground">{category.description}</p>
+                            <h3 className="font-bold text-lg">
+                              {category.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {category.description}
+                            </p>
                           </div>
                           <Button
                             variant="outline"
@@ -873,7 +1086,9 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         </div>
                         <div className="flex items-center space-x-2">
                           <Tag className="h-4 w-4 text-primary" />
-                          <span className="text-sm">{category.count} Getränke</span>
+                          <span className="text-sm">
+                            {category.count} Getränke
+                          </span>
                         </div>
                       </CardContent>
                     </Card>
@@ -892,54 +1107,93 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Standorte verwalten</h2>
-                
-                <Dialog open={isAddLocationOpen} onOpenChange={setIsAddLocationOpen}>
+
+                <Dialog
+                  open={isAddLocationOpen}
+                  onOpenChange={setIsAddLocationOpen}
+                >
                   <DialogTrigger asChild>
                     <Button className="mystical-glow">
                       <Plus className="h-4 w-4 mr-2" />
                       Standort hinzufügen
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="mystical-card wood-texture">
+                  <DialogContent className="mystical-card wood-texture !top-[20%] !translate-y-[-20%]">
                     <DialogHeader>
                       <DialogTitle>Neuen Standort hinzufügen</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Input
                         placeholder="Name"
-                        value={newLocation.name || ''}
-                        onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
+                        value={newLocation.name || ""}
+                        onChange={(e) =>
+                          setNewLocation({
+                            ...newLocation,
+                            name: e.target.value,
+                          })
+                        }
                       />
                       <Input
                         placeholder="Adresse"
-                        value={newLocation.address || ''}
-                        onChange={(e) => setNewLocation({ ...newLocation, address: e.target.value })}
+                        value={newLocation.address || ""}
+                        onChange={(e) =>
+                          setNewLocation({
+                            ...newLocation,
+                            address: e.target.value,
+                          })
+                        }
                       />
                       <Input
                         placeholder="Stadt"
-                        value={newLocation.city || ''}
-                        onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })}
+                        value={newLocation.city || ""}
+                        onChange={(e) =>
+                          setNewLocation({
+                            ...newLocation,
+                            city: e.target.value,
+                          })
+                        }
                       />
                       <Input
                         type="date"
                         placeholder="Datum"
-                        value={newLocation.date || ''}
-                        onChange={(e) => setNewLocation({ ...newLocation, date: e.target.value })}
+                        value={newLocation.date || ""}
+                        onChange={(e) =>
+                          setNewLocation({
+                            ...newLocation,
+                            date: e.target.value,
+                          })
+                        }
                       />
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="current"
                           checked={newLocation.isCurrent || false}
-                          onCheckedChange={(checked) => setNewLocation({ ...newLocation, isCurrent: !!checked })}
+                          onCheckedChange={(checked) =>
+                            setNewLocation({
+                              ...newLocation,
+                              isCurrent: !!checked,
+                            })
+                          }
                         />
-                        <label htmlFor="current" className="text-sm font-medium">Als aktueller Standort markieren</label>
+                        <label
+                          htmlFor="current"
+                          className="text-sm font-medium"
+                        >
+                          Als aktueller Standort markieren
+                        </label>
                       </div>
                       <div className="flex space-x-2">
-                        <Button onClick={handleAddLocation} className="mystical-glow">
+                        <Button
+                          onClick={handleAddLocation}
+                          className="mystical-glow"
+                        >
                           <Save className="h-4 w-4 mr-2" />
                           Speichern
                         </Button>
-                        <Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddLocationOpen(false)}
+                        >
                           <X className="h-4 w-4 mr-2" />
                           Abbrechen
                         </Button>
@@ -957,20 +1211,31 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {locations.map((location) => (
-                    <Card key={location.id} className="mystical-card wood-texture border-primary/20">
+                    <Card
+                      key={location.id}
+                      className="mystical-card wood-texture border-primary/20"
+                    >
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="font-bold text-lg">{location.name}</h3>
-                            <p className="text-sm text-muted-foreground">{location.address}</p>
-                            <p className="text-sm text-muted-foreground">{location.city}</p>
+                            <h3 className="font-bold text-lg">
+                              {location.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {location.address}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {location.city}
+                            </p>
                           </div>
                           <div className="flex space-x-2">
                             {!location.isCurrent && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleSetCurrentLocation(location.id)}
+                                onClick={() =>
+                                  handleSetCurrentLocation(location.id)
+                                }
                               >
                                 <MapPin className="h-4 w-4" />
                               </Button>
@@ -987,7 +1252,9 @@ export function AdminPageEnhanced({ setCurrentPage, currentUser, onLogout }: Adm
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-primary" />
-                            <span className="text-sm">{ApiUtils.formatDate(location.date)}</span>
+                            <span className="text-sm">
+                              {ApiUtils.formatDate(location.date)}
+                            </span>
                           </div>
                           {location.isCurrent && (
                             <Badge className="bg-primary/20 text-primary border-primary/30">
