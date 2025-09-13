@@ -149,6 +149,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -191,14 +192,37 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await api.login(email, password);
-      if (response.token && response.user) {
-        setUser(response.user);
+      if (response.accessToken) {
+        // If user data was fetched, use it; otherwise fetch it separately
+        if (response.user) {
+          setUser(response.user);
+        } else {
+          // Fetch user data after successful login
+          try {
+            const user = await api.getMe();
+            setUser(user);
+          } catch (userErr) {
+            console.error('Failed to fetch user after login:', userErr);
+            // Still consider login successful if token is valid
+          }
+        }
         setIsAuthenticated(true);
         return true;
       }
       return false;
     } catch (err) {
       console.error('Login error:', err);
+      // Clear any invalid tokens
+      tokenManager.removeToken();
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      const errorMessage = err instanceof ApiError 
+        ? err.message 
+        : err instanceof Error 
+        ? err.message 
+        : 'Anmeldung fehlgeschlagen';
+      setError(errorMessage);
       return false;
     }
   }, []);
@@ -218,6 +242,7 @@ export function useAuth() {
     user,
     loading,
     isAuthenticated,
+    error,
     login,
     logout,
     refetch: checkAuth

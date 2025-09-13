@@ -250,9 +250,9 @@ export interface ApiResponse<T = any> {
  * Authentication Response
  */
 export interface AuthResponse {
-  token: string;
-  user: User;
-  expiresAt: string;
+  accessToken: string;
+  user?: User;
+  expiresAt?: string;
 }
 
 // ==========================================
@@ -353,11 +353,24 @@ class GifthuetteApiService {
     // Headers zusammenstellen
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${CONFIG.SERVER_TOKEN}`,
       'X-Client': 'gifthütte-frontend',
       'X-Version': '2.0.0',
       ...options.headers,
     };
+
+    // Determine which token to use
+    const userToken = TokenManager.getToken();
+    
+    // For specific auth endpoints that need server token
+    const serverTokenEndpoints = ['/auth/login', '/auth/server-status'];
+    const needsServerToken = serverTokenEndpoints.some(ep => endpoint.startsWith(ep)) || !userToken;
+    
+    if (needsServerToken) {
+      headers['Authorization'] = `Bearer ${CONFIG.SERVER_TOKEN}`;
+    } else {
+      // For authenticated endpoints, use user token
+      headers['Authorization'] = `Bearer ${userToken}`;
+    }
 
     // Debug-Ausgabe
     if (CONFIG.DEBUG_MODE) {
@@ -365,7 +378,9 @@ class GifthuetteApiService {
         method: options.method || 'GET',
         url,
         endpoint,
+        tokenType: needsServerToken ? 'server' : 'user',
         hasServerToken: !!CONFIG.SERVER_TOKEN,
+        hasUserToken: !!userToken,
         timestamp: new Date().toISOString()
       });
     }
@@ -491,17 +506,29 @@ class GifthuetteApiService {
    * Benutzer einloggen
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/login', {
+    const response = await this.request<{ accessToken: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
     // Token lokal speichern
-    if (response.token) {
-      TokenManager.setToken(response.token);
+    if (response.accessToken) {
+      TokenManager.setToken(response.accessToken);
     }
 
-    return response;
+    // User-Daten über separaten API-Call holen
+    let user: User | undefined;
+    try {
+      user = await this.getMe();
+    } catch (error) {
+      console.warn('Could not fetch user data after login:', error);
+    }
+
+    return {
+      accessToken: response.accessToken,
+      user,
+      expiresAt: undefined // API doesn't provide expiry, but JWT has internal expiry
+    };
   }
 
   /**
