@@ -501,7 +501,7 @@ class GifthuetteApiService {
       status: string;
       timestamp: string;
       version?: string;
-    }>("/health");
+    }>("/auth/server-status");
   }
 
   /**
