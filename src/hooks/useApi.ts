@@ -191,27 +191,45 @@ export function useAuth() {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
+      console.log('🔐 Login attempt:', { email });
+      setError(null);
+      
       const response = await api.login(email, password);
+      console.log('✅ Login API response:', { 
+        hasAccessToken: !!response.accessToken, 
+        hasUser: !!response.user 
+      });
+      
       if (response.accessToken) {
+        console.log('🎯 Access token received, setting up user...');
+        
         // If user data was fetched, use it; otherwise fetch it separately
         if (response.user) {
+          console.log('👤 User data included in login response');
           setUser(response.user);
         } else {
           // Fetch user data after successful login
           try {
+            console.log('🔍 Fetching user data with /auth/me...');
             const user = await api.getMe();
+            console.log('✅ User data fetched:', { email: user.email, role: user.role });
             setUser(user);
           } catch (userErr) {
-            console.error('Failed to fetch user after login:', userErr);
+            console.error('❌ Failed to fetch user after login:', userErr);
             // Still consider login successful if token is valid
+            console.log('⚠️ Continuing with login despite user fetch failure');
           }
         }
+        
         setIsAuthenticated(true);
+        console.log('🎉 Login successful!');
         return true;
+      } else {
+        console.log('❌ No access token in response');
+        return false;
       }
-      return false;
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('❌ Login error:', err);
       // Clear any invalid tokens
       tokenManager.removeToken();
       setUser(null);

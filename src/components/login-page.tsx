@@ -44,14 +44,19 @@ export function LoginPage({ setCurrentPage, onLogin }: LoginPageProps) {
     setError('');
 
     try {
+      console.log('🔐 LoginPage: Starting login process...', formData);
       const success = await onLogin(formData);
+      console.log('🎯 LoginPage: Login result:', { success });
       
       if (success) {
+        console.log('✅ LoginPage: Login successful, redirecting to admin...');
         setCurrentPage('admin');
       } else {
+        console.log('❌ LoginPage: Login failed');
         setError('Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.');
       }
     } catch (err) {
+      console.error('❌ LoginPage: Exception during login:', err);
       setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
     } finally {
       setIsLoading(false);

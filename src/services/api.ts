@@ -381,6 +381,8 @@ class GifthuetteApiService {
         tokenType: needsServerToken ? 'server' : 'user',
         hasServerToken: !!CONFIG.SERVER_TOKEN,
         hasUserToken: !!userToken,
+        serverTokenLength: CONFIG.SERVER_TOKEN?.length,
+        userTokenLength: userToken?.length,
         timestamp: new Date().toISOString()
       });
     }
@@ -421,6 +423,15 @@ class GifthuetteApiService {
       
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
+        
+        if (CONFIG.DEBUG_MODE) {
+          console.log('✅ API Success Response:', {
+            status: response.status,
+            endpoint,
+            hasData: !!data,
+            dataKeys: typeof data === 'object' && data ? Object.keys(data) : 'non-object'
+          });
+        }
       } else {
         data = (await response.text()) as unknown as T;
       }
@@ -506,23 +517,39 @@ class GifthuetteApiService {
    * Benutzer einloggen
    */
   async login(email: string, password: string): Promise<AuthResponse> {
+    console.log('🚀 API Login request for:', email);
+    
     const response = await this.request<{ accessToken: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
+    console.log('✅ Login API response received:', { 
+      hasAccessToken: !!response.accessToken,
+      tokenLength: response.accessToken?.length 
+    });
+
     // Token lokal speichern
     if (response.accessToken) {
+      console.log('💾 Storing access token...');
       TokenManager.setToken(response.accessToken);
+      console.log('✅ Token stored successfully');
     }
 
     // User-Daten über separaten API-Call holen
     let user: User | undefined;
     try {
+      console.log('👤 Fetching user data after login...');
       user = await this.getMe();
+      console.log('✅ User data fetched:', { email: user.email, role: user.role });
     } catch (error) {
-      console.warn('Could not fetch user data after login:', error);
+      console.warn('❌ Could not fetch user data after login:', error);
     }
+
+    console.log('🎯 Returning login response:', { 
+      hasAccessToken: !!response.accessToken, 
+      hasUser: !!user 
+    });
 
     return {
       accessToken: response.accessToken,
@@ -546,7 +573,21 @@ class GifthuetteApiService {
    * Aktuellen Benutzer abrufen
    */
   async getMe(): Promise<User> {
-    return this.request<User>('/auth/me');
+    console.log('👤 Fetching current user data...');
+    const currentToken = TokenManager.getToken();
+    console.log('🔍 Current token for /auth/me:', { 
+      hasToken: !!currentToken, 
+      tokenLength: currentToken?.length 
+    });
+    
+    try {
+      const user = await this.request<User>('/auth/me');
+      console.log('✅ /auth/me successful:', { email: user.email, role: user.role });
+      return user;
+    } catch (error) {
+      console.error('❌ /auth/me failed:', error);
+      throw error;
+    }
   }
 
   /**
