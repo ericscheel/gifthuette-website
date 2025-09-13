@@ -20,6 +20,10 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
     tags: drink.tags || [],
     media: drink.media || [],
   };
+
+  // Extract simple ingredient and tag names for display
+  const ingredientNames = safeDrink.ingredients.map(ing => ing.ingredient?.name || '').filter(Boolean);
+  const tagNames = safeDrink.tags.map(tag => tag.tag?.name || '').filter(Boolean);
   
   const springValues = {
     damping: 25,
@@ -116,7 +120,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Floating badges with subtle 3D effect */}
-              {safeDrink.tags.includes('signature') && (
+              {tagNames.includes('signature') && (
                 <motion.div
                   className="absolute top-3 left-3 [transform:translateZ(20px)]"
                   style={{ transformStyle: 'preserve-3d' }}
@@ -131,7 +135,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                 className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded text-sm shadow-lg [transform:translateZ(15px)]"
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                {safeDrink.alcoholContent ? `${safeDrink.alcoholContent}%` : '0%'}
+                {safeDrink.alcoholPercentage ? `${safeDrink.alcoholPercentage}%` : '0%'}
               </motion.div>
               
               {/* 3D Floating Product Name and Price */}
@@ -251,14 +255,14 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                 >
                   <h4 className="text-xs font-semibold mb-1 text-primary">Zutaten:</h4>
                   <div className="flex flex-wrap gap-1">
-                    {safeDrink.ingredients.slice(0, 3).map((ingredient, idx) => (
+                    {ingredientNames.slice(0, 3).map((ingredient, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
                         {ingredient}
                       </Badge>
                     ))}
-                    {safeDrink.ingredients.length > 3 && (
+                    {ingredientNames.length > 3 && (
                       <Badge variant="outline" className="text-xs px-1 py-0">
-                        +{safeDrink.ingredients.length - 3}
+                        +{ingredientNames.length - 3}
                       </Badge>
                     )}
                   </div>
@@ -276,7 +280,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                         {safeDrink.category.name}
                       </Badge>
                     )}
-                    {safeDrink.tags.slice(0, 2).map((tag, idx) => (
+                    {tagNames.slice(0, 2).map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs px-1 py-0">
                         {tag}
                       </Badge>
@@ -297,7 +301,7 @@ function TiltedDrinkCard({ drink, setSelectedDrink }: { drink: Drink; setSelecte
                     {ApiUtils.formatPrice(safeDrink.priceCents)}
                   </span>
                   <div className="text-xs text-muted-foreground">
-                    {safeDrink.alcoholContent ? `${safeDrink.alcoholContent}%` : '0%'}
+                    {safeDrink.alcoholPercentage ? `${safeDrink.alcoholPercentage}%` : '0%'}
                   </div>
                 </div>
                 <motion.div
@@ -395,7 +399,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
         ]);
 
         setDrinks(drinksResponse || []);
-        setCategories((categoriesResponse || []).filter(cat => cat.isActive));
+        setCategories((categoriesResponse || []));
       } catch (err) {
         console.error('Error loading drinks data:', err);
         setError('Fehler beim Laden der Getränke. Bitte versuchen Sie es später erneut.');
@@ -412,7 +416,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
     return drinks.filter(drink => 
       drink.categoryId === selectedCategory || 
       drink.category?.slug === selectedCategory ||
-      drink.tags?.includes(selectedCategory)
+      drink.tags?.some(tag => tag.tag?.name === selectedCategory)
     );
   }, [selectedCategory, drinks]);
 
@@ -449,7 +453,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
               <div className="aspect-square rounded-lg overflow-hidden mystical-glow relative">
                 <ImageWithFallback
                   src={drink.media?.[0]?.url || 'https://images.unsplash.com/photo-1681579289953-5c37b36c7b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmVlbiUyMGNvY2t0YWlsJTIwZHJpbmt8ZW58MXx8fHwxNzU3NjExMTI2fDA&ixlib=rb-4.1.0&q=80&w=1080'}
-                  alt={drink.name}
+                  alt={drink.media?.[0]?.alt || drink.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-transparent to-primary/20" />
@@ -478,7 +482,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
                   >
                     {drink.name}
                   </motion.h1>
-                  {drink.tags?.includes('signature') && (
+                  {drink.tags?.some(tag => tag.tag?.name === 'signature') && (
                     <Badge className="bg-primary text-primary-foreground">
                       Signature
                     </Badge>
@@ -498,7 +502,7 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
                   >
                     {ApiUtils.formatPrice(drink.priceCents)}
                   </motion.span>
-                  <span>Alkohol: {drink.alcoholContent ? `${drink.alcoholContent}%` : '0%'}</span>
+                  <span>Alkohol: {drink.alcoholPercentage ? `${drink.alcoholPercentage}%` : '0%'}</span>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 fill-primary text-primary mr-1" />
                     <span>4.5</span>
@@ -509,6 +513,28 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
               <div>
                 <h3 className="text-xl font-bold mb-2">Beschreibung</h3>
                 <p className="text-muted-foreground">{drink.description}</p>
+                
+                {drink.instructions && (
+                  <div className="mt-4">
+                    <h4 className="font-semibold text-primary">Zubereitung:</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{drink.instructions}</p>
+                  </div>
+                )}
+                
+                <div className="flex gap-4 mt-4 text-sm text-muted-foreground">
+                  {drink.glassType && (
+                    <span>🥃 {drink.glassType}</span>
+                  )}
+                  {drink.preparationTime && (
+                    <span>⏱️ {drink.preparationTime} Min.</span>
+                  )}
+                  {drink.difficulty && (
+                    <span>📊 {drink.difficulty}</span>
+                  )}
+                  {drink.origin && (
+                    <span>🌍 {drink.origin}</span>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -516,7 +542,10 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
                 <div className="flex flex-wrap gap-2">
                   {(drink.ingredients || []).map((ingredient, index) => (
                     <Badge key={index} variant="outline">
-                      {ingredient}
+                      {ingredient.ingredient?.name || 'Unbekannte Zutat'}
+                      {ingredient.amount && (
+                        <span className="ml-1 text-xs opacity-75">({ingredient.amount})</span>
+                      )}
                     </Badge>
                   ))}
                 </div>
@@ -531,8 +560,8 @@ export function DrinksPage({ setCurrentPage, selectedDrink, setSelectedDrink }: 
                     </Badge>
                   )}
                   {(drink.tags || []).map((tag, index) => (
-                    <Badge key={index} variant="outline">
-                      {tag}
+                    <Badge key={index} variant="outline" style={{ backgroundColor: tag.tag?.color + '20', borderColor: tag.tag?.color }}>
+                      {tag.tag?.name || 'Unbekannter Tag'}
                     </Badge>
                   ))}
                 </div>

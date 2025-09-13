@@ -82,7 +82,7 @@ export function useDrinks(searchParams?: {
   return useApi(
     async () => {
       const response = await api.getDrinks(searchParams);
-      return response;
+      return response.drinks; // Extract drinks array from new API response
     },
     [searchParams?.q, searchParams?.category, searchParams?.page, searchParams?.pageSize]
   );

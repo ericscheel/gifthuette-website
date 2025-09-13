@@ -75,12 +75,57 @@ const CONFIG_VALID = validateConfig();
 // ==========================================
 
 /**
+ * Ingredient - Einzelne Zutat mit Details
+ */
+export interface Ingredient {
+  id: string;
+  name: string;
+  category: string;
+  alcoholic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Drink Ingredient - Zutat in einem Getränk
+ */
+export interface DrinkIngredient {
+  id: string;
+  drinkId: string;
+  ingredientId: string;
+  amount: string;
+  isOptional: boolean;
+  order: number;
+  ingredient: Ingredient;
+}
+
+/**
+ * Tag - Tag-Entity
+ */
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+}
+
+/**
+ * Drink Tag - Tag-Verbindung zu einem Getränk
+ */
+export interface DrinkTag {
+  drinkId: string;
+  tagId: string;
+  tag: Tag;
+}
+
+/**
  * Drink Variant - verschiedene Größen/Varianten eines Getränks
  */
 export interface DrinkVariant {
   id: string;
   label: string;
   priceCents: number;
+  drinkId: string;
 }
 
 /**
@@ -89,8 +134,9 @@ export interface DrinkVariant {
 export interface DrinkMedia {
   id: string;
   url: string;
-  type: "IMAGE" | "VIDEO";
-  altText?: string;
+  alt: string;
+  drinkId: string;
+  createdAt: string;
 }
 
 /**
@@ -102,14 +148,20 @@ export interface Drink {
   name: string;
   description: string;
   priceCents: number;
+  alcoholPercentage?: string;
+  preparationTime?: number;
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
+  glassType?: string;
+  garnish?: string;
+  instructions?: string;
+  origin?: string;
+  active: boolean;
   categoryId: string;
   category?: Category;
   variants: DrinkVariant[];
   media: DrinkMedia[];
-  isActive: boolean;
-  tags: string[];
-  alcoholContent?: number;
-  ingredients: string[];
+  ingredients: DrinkIngredient[];
+  tags: DrinkTag[];
   createdAt: string;
   updatedAt: string;
 }
@@ -122,10 +174,9 @@ export interface Category {
   slug: string;
   name: string;
   description?: string;
-  isActive: boolean;
-  sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  drinks?: Drink[];
 }
 
 /**
@@ -175,6 +226,19 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+/**
+ * Drinks API Response - New API Response Format for Drinks
+ */
+export interface DrinksApiResponse {
+  drinks: Drink[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -508,7 +572,7 @@ class GifthuetteApiService {
     isActive?: boolean;
     sortBy?: "name" | "price" | "createdAt";
     sortOrder?: "asc" | "desc";
-  }): Promise<PaginatedResponse<Drink>> {
+  }): Promise<DrinksApiResponse> {
     const searchParams = new URLSearchParams();
 
     if (params?.q) searchParams.append("q", params.q);
@@ -524,7 +588,7 @@ class GifthuetteApiService {
     const endpoint = `/drinks${
       searchParams.toString() ? `?${searchParams}` : ""
     }`;
-    return this.request<PaginatedResponse<Drink>>(endpoint);
+    return this.request<DrinksApiResponse>(endpoint);
   }
 
   /**
@@ -551,10 +615,13 @@ class GifthuetteApiService {
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
 
-    const endpoint = `/drinks/enhanced${
+    const endpoint = `/drinks${
       searchParams.toString() ? `?${searchParams}` : ""
     }`;
-    return this.request<Drink[]>(endpoint);
+    const response = await this.request<DrinksApiResponse>(endpoint);
+
+    // Extract drinks array from new API response structure
+    return response.drinks || [];
   }
 
   /**
@@ -718,7 +785,7 @@ class GifthuetteApiService {
    * Alle Standorte abrufen
    */
   async getLocations(): Promise<Location[]> {
-    return this.request<Location[]>("/locations");
+    return this.request<Location[]>("/locations/upcoming");
   }
 
   /**
@@ -921,7 +988,7 @@ class GifthuetteApiService {
       drinks: string[];
       ingredients: string[];
       categories: string[];
-    }>(`/search/suggestions?q=${encodeURIComponent(query)}`);
+    }>(`/drinks/suggestions?q=${encodeURIComponent(query)}`);
   }
 
   /**

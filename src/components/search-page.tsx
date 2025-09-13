@@ -38,7 +38,11 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
         // Extract unique ingredients from all drinks
         const ingredients = new Set<string>();
         (drinks || []).forEach(drink => {
-          (drink.ingredients || []).forEach(ingredient => ingredients.add(ingredient));
+          (drink.ingredients || []).forEach(ingredient => {
+            if (ingredient.ingredient?.name) {
+              ingredients.add(ingredient.ingredient.name);
+            }
+          });
         });
         setAllIngredients(Array.from(ingredients).sort());
       } catch (err) {
@@ -361,9 +365,10 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
                     {/* Highlight matching ingredients */}
                     <div className="flex flex-wrap gap-1 mb-3">
                       {(drink.ingredients || []).slice(0, 3).map((ingredient, idx) => {
+                        const ingredientName = ingredient.ingredient?.name || '';
                         const isMatching = selectedFilters.some(filter =>
-                          ingredient.toLowerCase().includes(filter.toLowerCase())
-                        ) || (searchQuery && ingredient.toLowerCase().includes(searchQuery.toLowerCase()));
+                          ingredientName.toLowerCase().includes(filter.toLowerCase())
+                        ) || (searchQuery && ingredientName.toLowerCase().includes(searchQuery.toLowerCase()));
                         
                         return (
                           <Badge 
@@ -371,7 +376,7 @@ export function SearchPage({ setCurrentPage, setSelectedDrink }: SearchPageProps
                             variant={isMatching ? "default" : "outline"} 
                             className={`text-xs ${isMatching ? 'bg-primary text-primary-foreground' : ''}`}
                           >
-                            {ingredient}
+                            {ingredientName}
                           </Badge>
                         );
                       })}

@@ -9,7 +9,7 @@ import { ImprintPage } from './components/imprint-page';
 import { AdminPageEnhanced as AdminPage } from './components/admin-page-enhanced';
 import { LoginPage } from './components/login-page';
 import { ToastProvider } from './components/toast-provider';
-import { ApiStatusIndicator } from './components/api-status-indicator';
+
 import { useAuth } from './hooks/useApi';
 
 function App() {
@@ -100,7 +100,7 @@ function App() {
             onLogout={handleLogout}
           />
         )}
-        <ApiStatusIndicator />
+
         {renderCurrentPage()}
       </div>
     </ToastProvider>

@@ -54,45 +54,8 @@ export function ApiStatusIndicator({ className = '' }: ApiStatusIndicatorProps) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Badge
-        variant={isOnline ? "default" : "secondary"}
-        className={`
-          px-3 py-1 text-xs font-medium shadow-lg backdrop-blur-sm
-          ${isOnline 
-            ? 'bg-primary/90 text-primary-foreground border-primary/20' 
-            : 'bg-muted/90 text-muted-foreground border-border/50'
-          }
-        `}
-      >
-        <motion.div
-          animate={{ rotate: isOnline ? 0 : 180 }}
-          transition={{ duration: 0.3 }}
-          className="mr-1.5"
-        >
-          {isOnline ? (
-            <Cloud className="h-3 w-3" />
-          ) : (
-            <CloudOff className="h-3 w-3" />
-          )}
-        </motion.div>
-        {status.message}
-        
-        {/* Pulse indicator for online status */}
-        {isOnline && (
-          <motion.div
-            className="ml-2 w-2 h-2 bg-green-400 rounded-full"
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.8, 1, 0.8],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-        )}
-      </Badge>
+      {/* API Status Indicator removed - using header indicator instead */}
+      <div className="hidden"></div>
     </motion.div>
   );
 }
