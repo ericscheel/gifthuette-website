@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Mail, 
-  Instagram, 
+import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Badge } from "./ui/badge";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+import {
+  MapPin,
+  Clock,
+  Phone,
+  Mail,
+  Instagram,
   Facebook,
   Calendar,
   Star,
   Send,
-  Loader2
-} from 'lucide-react';
-import { api, type Location, ApiUtils } from '../services/api';
+  Loader2,
+} from "lucide-react";
+import { api, type Location, ApiUtils } from "../services/api";
 
 interface ContactPageProps {
   setCurrentPage: (page: string) => void;
@@ -26,12 +26,12 @@ interface ContactPageProps {
 
 export function ContactPage({ setCurrentPage }: ContactPageProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    event: '',
-    date: '',
-    message: ''
+    name: "",
+    email: "",
+    phone: "",
+    event: "",
+    date: "",
+    message: "",
   });
 
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
@@ -52,15 +52,17 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
         const [current, upcoming, all] = await Promise.all([
           api.getCurrentLocation(),
           api.getUpcomingLocations(),
-          api.getLocations()
+          api.getLocations(),
         ]);
 
         setCurrentLocation(current);
         setUpcomingLocations(upcoming);
         setAllLocations(all);
       } catch (err) {
-        console.error('Error loading location data:', err);
-        setError('Fehler beim Laden der Standortdaten. Einige Informationen sind möglicherweise nicht verfügbar.');
+        console.error("Error loading location data:", err);
+        setError(
+          "Fehler beim Laden der Standortdaten. Einige Informationen sind möglicherweise nicht verfügbar."
+        );
       } finally {
         setLoading(false);
       }
@@ -69,53 +71,57 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
     loadLocationData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.message) {
-      alert('Bitte füllen Sie alle Pflichtfelder aus.');
+      alert("Bitte füllen Sie alle Pflichtfelder aus.");
       return;
     }
-    
+
     setFormSubmitting(true);
-    
+
     try {
       // In a real implementation, you would have a contact API endpoint
       // For now, we'll use console logging and user feedback
       // TODO: Implement api.sendContactMessage() when backend is ready
-      
-      console.log('Contact form submission:', {
+
+      console.log("Contact form submission:", {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         event: formData.event,
         date: formData.date,
         message: formData.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       // Simulate successful submission
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      alert('Nachricht erfolgreich gesendet! Wir melden uns bald bei Ihnen.');
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      alert("Nachricht erfolgreich gesendet! Wir melden uns bald bei Ihnen.");
       setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        event: '',
-        date: '',
-        message: ''
+        name: "",
+        email: "",
+        phone: "",
+        event: "",
+        date: "",
+        message: "",
       });
     } catch (err) {
-      console.error('Contact form error:', err);
-      alert('Fehler beim Senden der Nachricht. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.');
+      console.error("Contact form error:", err);
+      alert(
+        "Fehler beim Senden der Nachricht. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt."
+      );
     } finally {
       setFormSubmitting(false);
     }
@@ -141,7 +147,8 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
               <span className="text-primary">Kontakt</span> & Standorte
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Finden Sie uns auf Events in der Region oder buchen Sie uns für Ihre Veranstaltung
+              Finden Sie uns auf Events in der Region oder buchen Sie uns für
+              Ihre Veranstaltung
             </p>
           </motion.div>
         </div>
@@ -160,7 +167,7 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
             <h2 className="text-3xl font-bold mb-8 text-center">
               Aktuelle <span className="text-primary">Standorte</span>
             </h2>
-            
+
             {loading ? (
               <div className="text-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
@@ -188,26 +195,30 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                     <Card className="overflow-hidden bg-card wood-texture border-primary/20 poison-glow">
                       <div className="relative h-48">
                         <ImageWithFallback
-                          src="https://images.unsplash.com/photo-1755414717736-0d3ffe1f5a1a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbGQlMjB3b29kZW4lMjBwdWIlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NTc2MTExMjV8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                          src="https://i.imgur.com/8HJ4cuR.jpeg"
                           alt={location.name}
                           className="w-full h-full object-cover"
                         />
-                        <Badge 
-                          className="absolute top-4 left-4 bg-primary text-primary-foreground"
-                        >
-                          {location.isCurrent ? "Aktuell vor Ort" : "Kommender Standort"}
+                        <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
+                          {location.isCurrent
+                            ? "Aktuell vor Ort"
+                            : "Kommender Standort"}
                         </Badge>
                       </div>
                       <CardContent className="p-6">
-                        <h3 className="text-xl font-bold mb-2">{location.name}</h3>
+                        <h3 className="text-xl font-bold mb-2">
+                          {location.name}
+                        </h3>
                         <p className="text-muted-foreground mb-4">
                           Besuchen Sie uns an diesem besonderen Standort!
                         </p>
-                        
+
                         <div className="space-y-3">
                           <div className="flex items-center text-sm">
                             <MapPin className="h-4 w-4 mr-2 text-primary" />
-                            <span>{location.address}, {location.city}</span>
+                            <span>
+                              {location.address}, {location.city}
+                            </span>
                           </div>
                           <div className="flex items-center text-sm">
                             <Calendar className="h-4 w-4 mr-2 text-primary" />
@@ -222,7 +233,8 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Derzeit sind wir nicht vor Ort. Schauen Sie bald wieder vorbei!
+                  Derzeit sind wir nicht vor Ort. Schauen Sie bald wieder
+                  vorbei!
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Folgen Sie uns auf Social Media für aktuelle Updates!
@@ -246,7 +258,7 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
             <h2 className="text-3xl font-bold mb-8 text-center">
               Kommende <span className="text-primary">Events</span>
             </h2>
-            
+
             {loading ? (
               <div className="text-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
@@ -266,17 +278,19 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                     <Card className="p-6 bg-card wood-texture border-primary/20 hover:border-primary/50 transition-colors">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-primary mb-2">
-                          {new Date(event.date).toLocaleDateString('de-DE', { 
-                            day: 'numeric', 
-                            month: 'long', 
-                            year: 'numeric' 
+                          {new Date(event.date).toLocaleDateString("de-DE", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
                           })}
                         </div>
                         <h3 className="font-bold mb-2">{event.name}</h3>
                         <div className="space-y-1 text-sm text-muted-foreground">
                           <div className="flex items-center justify-center">
                             <MapPin className="h-3 w-3 mr-1" />
-                            <span>{event.address}, {event.city}</span>
+                            <span>
+                              {event.address}, {event.city}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -290,7 +304,8 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                   Kommende Events werden bald bekanntgegeben.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Folgen Sie uns auf Social Media, um als Erste über neue Events informiert zu werden!
+                  Folgen Sie uns auf Social Media, um als Erste über neue Events
+                  informiert zu werden!
                 </p>
               </div>
             )}
@@ -313,10 +328,11 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                 Event <span className="text-primary">Buchung</span>
               </h2>
               <p className="text-muted-foreground mb-6">
-                Buchen Sie die Gifthütte für Ihr Event! Egal ob Firmenfest, Hochzeit oder 
-                private Feier - wir bringen die perfekte Stimmung zu Ihnen.
+                Buchen Sie die Gifthütte für Ihr Event! Egal ob Firmenfest,
+                Hochzeit oder private Feier - wir bringen die perfekte Stimmung
+                zu Ihnen.
               </p>
-              
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
@@ -337,7 +353,7 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                     disabled={formSubmitting}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     name="phone"
@@ -356,7 +372,7 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                     disabled={formSubmitting}
                   />
                 </div>
-                
+
                 <Input
                   name="event"
                   placeholder="Art der Veranstaltung"
@@ -364,7 +380,7 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                   onChange={handleInputChange}
                   disabled={formSubmitting}
                 />
-                
+
                 <Textarea
                   name="message"
                   placeholder="Beschreiben Sie Ihr Event (Anzahl Gäste, Location, besondere Wünsche...)"
@@ -374,10 +390,10 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                   required
                   disabled={formSubmitting}
                 />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full poison-glow" 
+
+                <Button
+                  type="submit"
+                  className="w-full poison-glow"
                   disabled={formSubmitting}
                 >
                   {formSubmitting ? (
@@ -411,23 +427,29 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                   <Phone className="h-5 w-5 mr-3 text-primary" />
                   <div>
                     <div className="font-medium">Telefon</div>
-                    <div className="text-muted-foreground">+49 (0) 123 456 789</div>
+                    <div className="text-muted-foreground">
+                      +49 (0) 1517 0303784
+                    </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Mail className="h-5 w-5 mr-3 text-primary" />
                   <div>
                     <div className="font-medium">E-Mail</div>
-                    <div className="text-muted-foreground">info@gifthuette.de</div>
+                    <div className="text-muted-foreground">
+                      info@gifthuette.de
+                    </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <MapPin className="h-5 w-5 mr-3 text-primary" />
                   <div>
                     <div className="font-medium">Service-Gebiet</div>
-                    <div className="text-muted-foreground">Baden-Württemberg & Rheinland-Pfalz</div>
+                    <div className="text-muted-foreground">
+                      Schleswig - Holstein, Hamburg & Niedersachsen
+                    </div>
                   </div>
                 </div>
               </div>
@@ -440,22 +462,15 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
                   <Instagram className="h-5 w-5 mr-3 text-primary" />
                   <div>
                     <div className="font-medium">Instagram</div>
-                    <div className="text-muted-foreground">@gifthuette_official</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Facebook className="h-5 w-5 mr-3 text-primary" />
-                  <div>
-                    <div className="font-medium">Facebook</div>
-                    <div className="text-muted-foreground">Gifthütte Mobile Bar</div>
+                    <div className="text-muted-foreground">@gifthuette_</div>
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <p className="text-sm text-muted-foreground">
-                  Folgen Sie uns für aktuelle Standorte, neue Kreationen und Event-Updates!
+                  Folgen Sie uns für aktuelle Standorte, neue Kreationen und
+                  Event-Updates!
                 </p>
               </div>
             </Card>
@@ -463,10 +478,12 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
             {/* API Status Info */}
             {error && (
               <Card className="p-6 bg-destructive/10 border-destructive/20">
-                <h4 className="text-sm font-medium text-destructive mb-2">Hinweis</h4>
+                <h4 className="text-sm font-medium text-destructive mb-2">
+                  Hinweis
+                </h4>
                 <p className="text-xs text-muted-foreground">
-                  Einige Standortdaten sind temporär nicht verfügbar. 
-                  Die Kontaktfunktionen sind jedoch voll funktionsfähig.
+                  Einige Standortdaten sind temporär nicht verfügbar. Die
+                  Kontaktfunktionen sind jedoch voll funktionsfähig.
                 </p>
               </Card>
             )}
@@ -487,14 +504,14 @@ export function ContactPage({ setCurrentPage }: ContactPageProps) {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button
                 variant="link"
-                onClick={() => setCurrentPage('privacy')}
+                onClick={() => setCurrentPage("privacy")}
                 className="text-muted-foreground hover:text-primary"
               >
                 Datenschutzerklärung
               </Button>
               <Button
                 variant="link"
-                onClick={() => setCurrentPage('imprint')}
+                onClick={() => setCurrentPage("imprint")}
                 className="text-muted-foreground hover:text-primary"
               >
                 Impressum
