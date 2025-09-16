@@ -132,7 +132,7 @@ function TiltedDrinkCard({
                 className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded text-sm shadow-lg [transform:translateZ(15px)]"
                 style={{ transformStyle: "preserve-3d" }}
               >
-                {drink.alcoholContent ? `${drink.alcoholContent}%` : "0%"}
+                {drink.alcoholPercentage ? `${drink.alcoholPercentage}%` : "0%"}
               </motion.div>
 
               {/* 3D Floating Product Name and Price */}
@@ -323,7 +323,9 @@ function TiltedDrinkCard({
                     {ApiUtils.formatPrice(drink.priceCents)}
                   </span>
                   <div className="text-xs text-muted-foreground">
-                    {drink.alcoholContent ? `${drink.alcoholContent}%` : "0%"}
+                    {drink.alcoholPercentage
+                      ? `${drink.alcoholPercentage}%`
+                      : "0%"}
                   </div>
                 </div>
                 <motion.div
