@@ -8,6 +8,18 @@ interface ApiStatusProps {
   className?: string;
 }
 
+// Helper function for env vars
+const getEnvVar = (key: string, defaultValue: string = '') => {
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      return import.meta.env[key] || defaultValue;
+    }
+    return defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 export function ApiStatus({ className }: ApiStatusProps) {
   const [status, setStatus] = useState<{
     isOnline: boolean;
@@ -25,31 +37,26 @@ export function ApiStatus({ className }: ApiStatusProps) {
     const checkApiStatus = async () => {
       try {
         // Check if we have a token
-        const getEnvVar = (key: string, defaultValue: string = '') => {
-          try {
-            if (typeof import.meta !== 'undefined' && import.meta.env) {
-              return import.meta.env[key] || defaultValue;
-            }
-            return defaultValue;
-          } catch {
-            return defaultValue;
-          }
-        };
-        
         const SERVER_TOKEN = getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '');
-        const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de');
         
         const hasToken = !!SERVER_TOKEN;
         
         // Try to reach the API
         let apiReachable = false;
         try {
-          // Use the new API health check
-          await api.healthCheck();
+          // Try server status endpoint first (preferred)
+          await api.getServerStatus();
           apiReachable = true;
         } catch (error) {
-          console.warn('API not reachable:', error);
-          apiReachable = false;
+          console.warn('Server status not reachable, trying health check:', error);
+          try {
+            // Fallback to health check
+            await api.healthCheck();
+            apiReachable = true;
+          } catch (healthError) {
+            console.warn('API not reachable:', healthError);
+            apiReachable = false;
+          }
         }
 
         setStatus({
@@ -133,7 +140,7 @@ export function ApiStatus({ className }: ApiStatusProps) {
         
         {getEnvVar('VITE_DEBUG') === 'true' && (
           <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-primary/20">
-            <div>API URL: {API_BASE_URL}</div>
+            <div>API URL: {getEnvVar('VITE_API_BASE_URL', 'https://api.gifthuette.de')}</div>
             <div>Server Token: {getEnvVar('VITE_GIFTHUETTE_SERVER_TOKEN', '') ? '✓ Gesetzt' : '✗ Nicht gesetzt'}</div>
           </div>
         )}

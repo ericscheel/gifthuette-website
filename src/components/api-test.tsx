@@ -20,11 +20,14 @@ export function ApiTest() {
 
   const testEndpoints = [
     { name: 'Health Check', test: () => api.healthCheck() },
+    { name: 'Server Status', test: () => api.getServerStatus() },
     { name: 'Categories', test: () => api.getCategories() },
     { name: 'Highlights', test: () => api.getHighlights() },
     { name: 'Current Location', test: () => api.getCurrentLocation() },
+    { name: 'All Locations', test: () => api.getLocations() },
     { name: 'Upcoming Locations', test: () => api.getUpcomingLocations() },
-    { name: 'Drinks', test: () => api.getDrinks({ page: 1, pageSize: 5 }) }
+    { name: 'All Drinks', test: () => api.getAllDrinks() },
+    { name: 'Drinks (paginated)', test: () => api.getDrinks({ page: 1, pageSize: 5 }) }
   ];
 
   const runSingleTest = async (endpoint: { name: string; test: () => Promise<any> }) => {
