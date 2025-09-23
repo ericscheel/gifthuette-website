@@ -6,9 +6,10 @@ import { SearchPage } from './components/search-page';
 import { ContactPage } from './components/contact-page';
 import { PrivacyPage } from './components/privacy-page';
 import { ImprintPage } from './components/imprint-page';
-import { AdminPageEnhanced as AdminPage } from './components/admin-page-enhanced';
+import { AdminPageEnhancedV2 as AdminPage } from './components/admin-page-enhanced-v2';
 import { LoginPage } from './components/login-page';
 import { ToastProvider } from './components/toast-provider';
+import { CookieBanner } from './components/cookie-banner';
 
 import { useAuth } from './hooks/useApi';
 
@@ -102,6 +103,8 @@ function App() {
         )}
 
         {renderCurrentPage()}
+        
+        <CookieBanner />
       </div>
     </ToastProvider>
   );
