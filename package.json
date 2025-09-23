@@ -1,6 +1,6 @@
 
   {
-      "name": "Gifthütte Homepage Design",
+      "name": "G I F T H Ü T T E - Deine Bar für besondere Momente",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
@@ -55,6 +55,9 @@
       },
       "scripts": {
           "dev": "vite",
-          "build": "vite build"
+          "build": "npm run build:prod",
+          "start": "serve -s dist -l 3000",
+          "start:prod": "NODE_ENV=production serve -s dist -l 3000",
+          "build:prod": "VITE_NODE_ENV=production vite build"
       }
   }
