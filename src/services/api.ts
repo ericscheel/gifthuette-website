@@ -481,7 +481,7 @@ class GifthuetteApiService {
    * Health Check - API Status prüfen
    */
   async healthCheck(): Promise<{ status: string; timestamp: string; version?: string }> {
-    return this.request<{ status: string; timestamp: string; version?: string }>('/health');
+    return this.request<{ status: string; timestamp: string; version?: string }>('/auth/server-status');
   }
 
   /**
@@ -1140,7 +1140,7 @@ export const ApiUtils = {
    */
   isApiAvailable: async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${CONFIG.API_BASE_URL}/health`, { 
+      const response = await fetch(`${CONFIG.API_BASE_URL}/auth/server-status`, { 
         method: 'GET', 
         signal: AbortSignal.timeout(5000) 
       });
