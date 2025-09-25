@@ -541,3 +541,81 @@ html {
     0 0 30px rgba(34, 197, 94, 0.2);
   filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.4));
 }
+
+/* Admin dialog optimizations */
+.admin-dialog-content {
+  max-width: 95vw !important;
+  width: min(1200px, 95vw) !important;
+  max-height: 95vh !important;
+  overflow: hidden !important;
+}
+
+.admin-dialog-scroll {
+  max-height: calc(95vh - 120px);
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-right: -8px;
+}
+
+/* Optimized scroll behavior for admin forms */
+.admin-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.admin-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.admin-variant-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--card);
+}
+
+.admin-ingredient-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 4px);
+  font-size: 0.875rem;
+}
+
+/* Better mobile responsiveness for admin */
+@media (max-width: 768px) {
+  .admin-dialog-content {
+    width: 98vw !important;
+    max-height: 98vh !important;
+    margin: 1vh 1vw !important;
+  }
+  
+  .admin-dialog-scroll {
+    max-height: calc(98vh - 100px);
+  }
+  
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-variant-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

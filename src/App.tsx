@@ -6,7 +6,7 @@ import { SearchPage } from './components/search-page';
 import { ContactPage } from './components/contact-page';
 import { PrivacyPage } from './components/privacy-page';
 import { ImprintPage } from './components/imprint-page';
-import { AdminPageEnhancedV2 as AdminPage } from './components/admin-page-enhanced-v2';
+import { AdminPageFixed as AdminPage } from './components/admin-page-fixed';
 import { LoginPage } from './components/login-page';
 import { ToastProvider } from './components/toast-provider';
 import { CookieBanner } from './components/cookie-banner';

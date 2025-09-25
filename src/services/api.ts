@@ -1133,5 +1133,67 @@ export const ApiUtils = {
     if (!user) return false;
     const roleHierarchy = { 'CUSTOMER': 0, 'MANAGER': 1, 'ADMIN': 2 };
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  },
+
+  /**
+   * Check if API is available
+   */
+  isApiAvailable: async (): Promise<boolean> => {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/health`, { 
+        method: 'GET', 
+        signal: AbortSignal.timeout(5000) 
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Mock data fallbacks when API is unavailable
+   */
+  mockData: {
+    drinks: [
+      {
+        id: 'mock-1',
+        slug: 'giftiger-gruener-cocktail',
+        name: 'Giftiger Grüner Cocktail',
+        description: 'Ein mystischer grüner Trank mit geheimen Zutaten',
+        priceCents: 1250,
+        alcoholPercentage: '18%',
+        active: true,
+        category: { id: 'mock-cat-1', name: 'Signature Cocktails', slug: 'signature-cocktails' },
+        variants: [
+          { id: 'v1', label: '0,3l', priceCents: 1250 },
+          { id: 'v2', label: '0,5l', priceCents: 1850 }
+        ],
+        ingredients: [
+          { id: 'i1', ingredient: { id: 'ing1', name: 'Gin' } },
+          { id: 'i2', ingredient: { id: 'ing2', name: 'Grüner Chartreuse' } },
+          { id: 'i3', ingredient: { id: 'ing3', name: 'Limette' } }
+        ],
+        tags: [{ id: 't1', tag: { id: 'tag1', name: 'featured' } }],
+        media: [{ id: 'm1', url: 'https://images.unsplash.com/photo-1551024739-9f9d7d4e8e2e?w=400', alt: 'Giftiger Grüner Cocktail' }],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        categoryId: 'mock-cat-1'
+      }
+    ] as Drink[],
+    
+    categories: [
+      { id: 'mock-cat-1', name: 'Signature Cocktails', slug: 'signature-cocktails', description: 'Unsere Spezialitäten', active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'mock-cat-2', name: 'Shots', slug: 'shots', description: 'Starke Getränke', active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'mock-cat-3', name: 'Alkoholfrei', slug: 'alkoholfrei', description: 'Ohne Alkohol', active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ] as Category[],
+    
+    locations: [
+      { id: 'mock-loc-1', name: 'Münchener Oktoberfest', address: 'Theresienwiese', city: 'München', date: '2024-09-16', isCurrent: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'mock-loc-2', name: 'Düsseldorfer Kirmes', address: 'Oberkasseler Rheinwiesen', city: 'Düsseldorf', date: '2024-07-15', isCurrent: false, isActive: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ] as Location[],
+    
+    highlights: [
+      { id: 'mock-h1', title: 'Signature Cocktail', description: 'Giftiger Grüner Cocktail', imageUrl: 'https://images.unsplash.com/photo-1551024739-9f9d7d4e8e2e?w=400', order: 1, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ] as Highlight[]
   }
 };

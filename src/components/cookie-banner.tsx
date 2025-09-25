@@ -3,7 +3,6 @@ import { X, Settings, Cookie, Shield, BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Switch } from './ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface CookiePreferences {
   necessary: boolean;
@@ -49,6 +48,15 @@ export function CookieBanner() {
     setPreferences(necessaryOnly);
     saveCookieConsent(necessaryOnly);
     setIsVisible(false);
+  };
+
+  const openSettings = () => {
+    console.log('Opening cookie settings...');
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
   };
 
   const saveCustomPreferences = () => {
@@ -118,7 +126,7 @@ export function CookieBanner() {
                   </Button>
                   
                   <Button
-                    onClick={() => setShowSettings(true)}
+                    onClick={openSettings}
                     variant="ghost"
                     className="text-muted-foreground hover:text-poison-green-light"
                   >
@@ -146,96 +154,118 @@ export function CookieBanner() {
         </Card>
       </div>
 
-      {/* Settings Dialog */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="mystical-card wood-texture max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="mystical-text flex items-center gap-2">
-              <Settings className="w-5 h-5 text-poison-green-light" />
-              🧪 Zaubertrank-Einstellungen
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              {/* Necessary Cookies */}
-              <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
-                <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-poison-green-light mt-0.5 mystical-glow" />
-                  <div className="space-y-1">
-                    <h4 className="text-poison-green-light">Notwendige Zutaten</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Grundlegende Cookies für die Funktionalität der Gifthütte. Diese können nicht deaktiviert werden, 
-                      da sonst die magischen Eigenschaften der Website verloren gehen.
-                    </p>
-                  </div>
+      {/* Custom Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeSettings}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="mystical-card wood-texture relative">
+              {/* Header */}
+              <div className="p-6 border-b border-poison-green/20">
+                <div className="flex items-center justify-between">
+                  <h2 className="mystical-text flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-poison-green-light" />
+                    🧪 Zaubertrank-Einstellungen
+                  </h2>
+                  <Button
+                    onClick={closeSettings}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-poison-green-light"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Switch checked={preferences.necessary} disabled />
               </div>
 
-              {/* Analytics Cookies */}
-              <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
-                <div className="flex items-start gap-3">
-                  <BarChart3 className="w-5 h-5 text-poison-green-light mt-0.5" />
-                  <div className="space-y-1">
-                    <h4 className="text-poison-green-light">Analyse-Tränke</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Helfen uns zu verstehen, wie Besucher unsere magische Stätte nutzen, 
-                      damit wir die Wirksamkeit unserer Tränke verbessern können.
-                    </p>
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  {/* Necessary Cookies */}
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-poison-green-light mt-0.5 mystical-glow" />
+                      <div className="space-y-1">
+                        <h4 className="text-poison-green-light">Notwendige Zutaten</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Grundlegende Cookies für die Funktionalität der Gifthütte. Diese können nicht deaktiviert werden, 
+                          da sonst die magischen Eigenschaften der Website verloren gehen.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch checked={preferences.necessary} disabled />
+                  </div>
+
+                  {/* Analytics Cookies */}
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
+                    <div className="flex items-start gap-3">
+                      <BarChart3 className="w-5 h-5 text-poison-green-light mt-0.5" />
+                      <div className="space-y-1">
+                        <h4 className="text-poison-green-light">Analyse-Tränke</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Helfen uns zu verstehen, wie Besucher unsere magische Stätte nutzen, 
+                          damit wir die Wirksamkeit unserer Tränke verbessern können.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.analytics}
+                      onCheckedChange={(checked) =>
+                        setPreferences(prev => ({ ...prev, analytics: checked }))
+                      }
+                    />
+                  </div>
+
+                  {/* Marketing Cookies */}
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
+                    <div className="flex items-start gap-3">
+                      <Cookie className="w-5 h-5 text-poison-green-light mt-0.5" />
+                      <div className="space-y-1">
+                        <h4 className="text-poison-green-light">Verzauberungs-Elixiere</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Ermöglichen es uns, Ihnen personalisierte Angebote und magische Empfehlungen 
+                          zu senden, die auf Ihren Vorlieben basieren.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.marketing}
+                      onCheckedChange={(checked) =>
+                        setPreferences(prev => ({ ...prev, marketing: checked }))
+                      }
+                    />
                   </div>
                 </div>
-                <Switch
-                  checked={preferences.analytics}
-                  onCheckedChange={(checked) =>
-                    setPreferences(prev => ({ ...prev, analytics: checked }))
-                  }
-                />
-              </div>
 
-              {/* Marketing Cookies */}
-              <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-poison-green/20">
-                <div className="flex items-start gap-3">
-                  <Cookie className="w-5 h-5 text-poison-green-light mt-0.5" />
-                  <div className="space-y-1">
-                    <h4 className="text-poison-green-light">Verzauberungs-Elixiere</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Ermöglichen es uns, Ihnen personalisierte Angebote und magische Empfehlungen 
-                      zu senden, die auf Ihren Vorlieben basieren.
-                    </p>
-                  </div>
+                <div className="flex gap-3 pt-4 border-t border-poison-green/20">
+                  <Button
+                    onClick={saveCustomPreferences}
+                    className="bg-poison-green hover:bg-poison-green-dark text-background mystical-glow"
+                  >
+                    ✨ Einstellungen speichern
+                  </Button>
+                  <Button
+                    onClick={closeSettings}
+                    variant="outline"
+                    className="border-poison-green/30 text-poison-green-light hover:bg-poison-green/10"
+                  >
+                    Abbrechen
+                  </Button>
                 </div>
-                <Switch
-                  checked={preferences.marketing}
-                  onCheckedChange={(checked) =>
-                    setPreferences(prev => ({ ...prev, marketing: checked }))
-                  }
-                />
               </div>
-            </div>
 
-            <div className="flex gap-3 pt-4 border-t border-poison-green/20">
-              <Button
-                onClick={saveCustomPreferences}
-                className="bg-poison-green hover:bg-poison-green-dark text-background mystical-glow"
-              >
-                ✨ Einstellungen speichern
-              </Button>
-              <Button
-                onClick={() => setShowSettings(false)}
-                variant="outline"
-                className="border-poison-green/30 text-poison-green-light hover:bg-poison-green/10"
-              >
-                Abbrechen
-              </Button>
-            </div>
+              {/* Decorative elements in modal */}
+              <div className="absolute top-4 right-4 w-1 h-1 bg-poison-green-light rounded-full floating-particles" />
+              <div className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-slime-green rounded-full poison-bubble" />
+            </Card>
           </div>
-
-          {/* Decorative elements in dialog */}
-          <div className="absolute top-4 right-4 w-1 h-1 bg-poison-green-light rounded-full floating-particles" />
-          <div className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-slime-green rounded-full poison-bubble" />
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </>
   );
 }
