@@ -55,8 +55,8 @@
       },
       "scripts": {
             "dev": "vite",
-            "start": "serve -s dist -l 3000",
-            "start:prod": "NODE_ENV=production serve -s dist -l 3000",
+            "start": "serve -s build -l 3000",
+            "start:prod": "NODE_ENV=production serve -s build -l 3000",
             "build": "npm run build:prod",
             "build:prod": "VITE_NODE_ENV=production vite build"
       }
