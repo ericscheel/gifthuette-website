@@ -351,7 +351,7 @@ export function AdminPageFixed({ setCurrentPage, currentUser, onLogout }: AdminP
           categoryId: category.id,
           alcoholPercentage: parseFloat(newDrink.alcohol?.replace('%', '') || '0'),
           ingredients: newDrink.ingredients || [],
-          isActive: true
+          active: true
         });
 
         toast.success('Getränk erfolgreich hinzugefügt');

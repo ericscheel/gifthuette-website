@@ -655,7 +655,7 @@ class GifthuetteApiService {
     category?: string;
     page?: number;
     pageSize?: number;
-    isActive?: boolean;
+    active?: boolean;
     sortBy?: "name" | "price" | "createdAt";
     sortOrder?: "asc" | "desc";
   }): Promise<DrinksApiResponse> {
@@ -666,8 +666,8 @@ class GifthuetteApiService {
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.pageSize)
       searchParams.append("pageSize", params.pageSize.toString());
-    if (params?.isActive !== undefined)
-      searchParams.append("isActive", params.isActive.toString());
+    if (params?.active !== undefined)
+      searchParams.append("active", params.active.toString());
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
 
@@ -685,7 +685,7 @@ class GifthuetteApiService {
     category?: string;
     page?: number;
     pageSize?: number;
-    isActive?: boolean;
+    active?: boolean;
     sortBy?: "name" | "price" | "createdAt";
     sortOrder?: "asc" | "desc";
   }): Promise<Drink[]> {
@@ -696,8 +696,8 @@ class GifthuetteApiService {
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.pageSize)
       searchParams.append("pageSize", params.pageSize.toString());
-    if (params?.isActive !== undefined)
-      searchParams.append("isActive", params.isActive.toString());
+    if (params?.active !== undefined)
+      searchParams.append("active", params.active.toString());
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
 
@@ -739,7 +739,7 @@ class GifthuetteApiService {
     tags?: string[];
     alcoholPercentage?: number;
     ingredients?: string[];
-    isActive?: boolean;
+    active?: boolean;
   }): Promise<Drink> {
     return this.request<Drink>("/drinks", {
       method: "POST",
@@ -948,7 +948,7 @@ class GifthuetteApiService {
     description: string;
     startDate: string;
     endDate: string;
-    isActive?: boolean;
+    active?: boolean;
   }): Promise<Highlight> {
     return this.request<Highlight>("/highlights", {
       method: "POST",
