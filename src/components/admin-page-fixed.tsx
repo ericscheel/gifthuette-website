@@ -349,7 +349,7 @@ export function AdminPageFixed({ setCurrentPage, currentUser, onLogout }: AdminP
           description: newDrink.description || '',
           priceCents: mainPriceCents,
           categoryId: category.id,
-          alcoholContent: parseFloat(newDrink.alcohol?.replace('%', '') || '0'),
+          alcoholPercentage: parseFloat(newDrink.alcohol?.replace('%', '') || '0'),
           ingredients: newDrink.ingredients || [],
           isActive: true
         });
