@@ -203,7 +203,7 @@ export interface Highlight {
   description: string;
   startDate: string;
   endDate: string;
-  isActive: boolean;
+  active: boolean;
   createdAt: string;
   updatedAt: string;
 }
